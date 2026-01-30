@@ -7,12 +7,14 @@ Standalone example project showing how to use wilrise in a new project.
 
 1. **minimal.py** — Get something running: one method + `app.run()`.
 2. **main.py** — Router, dependency injection (`Use`), and optional patterns (Param alias, explicit method name).
-3. **auth_crud/** — Full app: SQLAlchemy, JWT auth, CRUD; uses keyed params when methods have both Pydantic and `Use(...)`.
+3. **db/** — Minimal real DB: SQLite + SQLAlchemy, `get_user` / `list_users` / `create_user` RPC.
+4. **auth_crud/** — Full app: SQLAlchemy, JWT auth, CRUD; uses keyed params when methods have both Pydantic and `Use(...)`.
 
 ## Files
 
 - **minimal.py** — Minimal: single `add` method and run; good for first-time use.
 - **main.py** — Full: Router, `Param` description/alias, `Use` dependency injection, explicit method names.
+- **db/** — Real DB: SQLite + SQLAlchemy, generator-based `get_db_session`; RPC methods `get_user`, `list_users`, `create_user`.
 - **auth_crud/** — Auth + CRUD: SQLAlchemy (SQLite), JWT login, user CRUD.
 
 ## Run
@@ -33,6 +35,14 @@ uv run python minimal.py
 cd examples
 uv sync
 uv run python main.py
+```
+
+**Real DB** (minimal SQLite + SQLAlchemy; `get_user`, `list_users`, `create_user`):
+
+```bash
+cd examples
+uv sync
+uv run python -m db.main
 ```
 
 **Auth + CRUD** (login and user CRUD; run `uv sync` first to install sqlalchemy, pyjwt, bcrypt, etc.):
@@ -97,6 +107,24 @@ curl -s -X POST http://127.0.0.1:8000 -H "Content-Type: application/json" -H "Au
 ```
 
 Database file defaults to `examples/auth_crud/auth_crud.db`; override with env var `AUTH_CRUD_DB`. This demo uses `debug=True` for easier troubleshooting; in production use `debug=False` or `from_env()` (see main README and [docs/configuration.md](../docs/configuration.md)).
+
+### Integration tests (pytest)
+
+From the **repository root** (so the current wilrise is used):
+
+```bash
+PYTHONPATH=examples uv run pytest examples/db/test_integration.py examples/auth_crud/test_integration.py -v
+```
+
+From the **examples** directory (after `uv sync`; installs pytest in examples dev deps):
+
+```bash
+cd examples
+uv sync
+uv run pytest db/test_integration.py auth_crud/test_integration.py -v
+```
+
+These tests use temporary SQLite DBs and Starlette TestClient to assert create/get/list (and for auth_crud: login, auth.me, user CRUD).
 
 ### Concurrency and transaction safety test
 

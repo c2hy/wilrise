@@ -293,21 +293,23 @@ class Wilrise:
         """
         if inspect.isgenerator(dep):
             first = next(dep)
-            cleanup: list[Any] = getattr(
+            cleanup: list[Any] | None = getattr(
                 request.state, "_wilrise_gen_cleanup", None
             )
             if cleanup is None:
-                request.state._wilrise_gen_cleanup = []
-                cleanup = request.state._wilrise_gen_cleanup
+                cleanup = []
+                request.state._wilrise_gen_cleanup = cleanup
             cleanup.append(dep)
             return (first, True)
         if inspect.isasyncgen(dep):
             first = await dep.__anext__()
-            cleanup = getattr(request.state, "_wilrise_gen_cleanup", None)
-            if cleanup is None:
-                request.state._wilrise_gen_cleanup = []
-                cleanup = request.state._wilrise_gen_cleanup
-            cleanup.append(dep)
+            cleanup_list: list[Any] | None = getattr(
+                request.state, "_wilrise_gen_cleanup", None
+            )
+            if cleanup_list is None:
+                cleanup_list = []
+                request.state._wilrise_gen_cleanup = cleanup_list
+            cleanup_list.append(dep)
             return (first, True)
         return (dep, False)
 

@@ -25,7 +25,6 @@ from .schemas import (
     UserUpdateParams,
 )
 
-
 # ---------- App ----------
 # debug=True for demo only; use debug=False or from_env() in production (see README)
 # Session lifecycle: get_db_session is a generator; framework closes it after each
@@ -57,10 +56,10 @@ def login(
 # ---------- Protected: current user ----------
 @app.method("auth.me")
 def auth_me(
-    current_user: User = Use(get_current_user),
+    current_user: dict[str, Any] = Use(get_current_user),
 ) -> dict[str, Any]:
     """Return current user info (requires Authorization: Bearer <token>)."""
-    return current_user.to_dict()
+    return current_user
 
 
 # ---------- Protected: user CRUD ----------
@@ -101,7 +100,7 @@ def user_list(
 def user_get(
     user_id: Annotated[int, Param(description="User ID")],
     db: Session = Use(get_db_session),
-    current_user: User = Use(get_current_user),
+    current_user: dict[str, Any] = Use(get_current_user),
 ) -> dict[str, Any] | None:
     """Get user by ID (requires auth)."""
     user = get_user_by_id(db, user_id)
@@ -114,7 +113,7 @@ def user_get(
 def user_update(
     params: UserUpdateParams,
     db: Session = Use(get_db_session),
-    current_user: User = Use(get_current_user),
+    current_user: dict[str, Any] = Use(get_current_user),
 ) -> dict[str, Any] | None:
     """Update user by ID (requires auth; demo allows updating any user)."""
     user = get_user_by_id(db, params.user_id)
@@ -133,7 +132,7 @@ def user_update(
 def user_delete(
     user_id: Annotated[int, Param(description="User ID to delete")],
     db: Session = Use(get_db_session),
-    current_user: User = Use(get_current_user),
+    current_user: dict[str, Any] = Use(get_current_user),
 ) -> bool:
     """Delete user by ID (requires auth)."""
     user = get_user_by_id(db, user_id)

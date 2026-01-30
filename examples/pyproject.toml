@@ -14,7 +14,12 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pyright>=1.1.0", "ruff>=0.8.0"]
+dev = [
+    "pyright>=1.1.0",
+    "ruff>=0.8.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+]
 
 [tool.uv.sources]
 wilrise = { path = ".." }
@@ -35,3 +40,8 @@ reportPrivateUsage = "warning"
 reportUnusedImport = "warning"
 reportUnusedVariable = "warning"
 reportUnusedFunction = "warning"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["."]
+pythonpath = ["."]

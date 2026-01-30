@@ -526,7 +526,6 @@ class TestPydanticValidation:
         """First param is BaseModel and key absent: entire params as that model;
         rest are resolved by key/Use/default (e.g. params + db + user_id)."""
         from pydantic import BaseModel
-
         from wilrise import Use
 
         class CreateEmotionRequest(BaseModel):
@@ -543,11 +542,11 @@ class TestPydanticValidation:
             return "user_42"
 
         @app.method
-        def create_emotion(
+        def create_emotion(  # pyright: ignore[reportUnusedFunction]
             params: CreateEmotionRequest,
             db: str = Use(get_db),
             user_id: str = Use(get_user_id),
-        ) -> dict:
+        ) -> dict[str, Any]:
             return {
                 "emotion": params.emotion,
                 "db": db,
@@ -1431,6 +1430,33 @@ class TestUseProviderGenerator:
     is injected; framework closes the generator after the RPC request so
     finally (e.g. session.close()) runs.
     """
+
+    def test_use_provider_sync_generator_injects_yielded_value_not_generator(
+        self,
+    ) -> None:
+        """Regression: handler must receive the first yield value, not the
+        generator object (Use(get_db) must inject db/session, not the gen).
+        """
+        import types
+
+        app = Wilrise()
+
+        def get_db(request: Request):
+            yield "db_session"
+
+        @app.method
+        def use_db(db: str = Use(get_db)) -> str:
+            # Must be the yielded value, never the generator object
+            assert not isinstance(db, types.GeneratorType), "db must not be generator"
+            return db
+
+        client = TestClient(app.as_asgi())
+        r = client.post(
+            "/",
+            json={"jsonrpc": "2.0", "method": "use_db", "params": {}, "id": 1},
+        )
+        assert r.status_code == 200
+        assert r.json()["result"] == "db_session"
 
     def test_use_provider_sync_generator_closed_after_request(self) -> None:
         """Sync generator provider: first yield injected; gen.close() called

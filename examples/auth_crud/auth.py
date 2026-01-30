@@ -12,7 +12,6 @@ from starlette.requests import Request
 from wilrise.errors import RpcError
 
 from .database import get_db_session, get_user_by_username
-from .models import User
 
 # JWT: use env in production
 SECRET_KEY = os.environ.get("JWT_SECRET", "example-secret-change-in-production")
@@ -58,8 +57,8 @@ def decode_access_token(token: str) -> dict[str, Any]:
         ) from None
 
 
-def get_current_user(request: Request) -> User:
-    """Dependency: require valid JWT and return User. Raise RpcError if unauthorized."""
+def get_current_user(request: Request) -> dict[str, Any]:
+    """Require valid JWT and return user dict; raise RpcError if unauthorized."""
     auth = request.headers.get("Authorization")
     if not auth or not auth.startswith("Bearer "):
         raise RpcError(
@@ -72,8 +71,12 @@ def get_current_user(request: Request) -> User:
     sub = payload.get("sub")
     if not sub:
         raise RpcError(-32001, "Invalid token payload", data={"code": "invalid_token"})
-    session = get_db_session(request)
-    user = get_user_by_username(session, str(sub))
-    if not user:
-        raise RpcError(-32001, "User not found", data={"code": "user_not_found"})
-    return user
+    gen = get_db_session(request)
+    try:
+        session = next(gen)
+        user = get_user_by_username(session, str(sub))
+        if not user:
+            raise RpcError(-32001, "User not found", data={"code": "user_not_found"})
+        return user.to_dict()
+    finally:
+        gen.close()
