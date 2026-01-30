@@ -1,6 +1,6 @@
 [project]
 name = "wilrise"
-version = "0.1.0"
+version = "0.1.1"
 description = "A modern async JSON-RPC framework built on Starlette. Where determination rises from simplicity."
 readme = "README.md"
 license = { text = "MIT" }

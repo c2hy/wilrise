@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - None yet.
 
+## [0.1.1] - 2025-01-30
+
+### Added
+
+- README FAQ: JSON-RPC array vs object params (positional vs named binding) and how to receive an array-of-objects parameter.
+
 ## [0.1.0] - 2025-01-30
 
 First public release.
@@ -22,5 +28,6 @@ First public release.
 - Optional `from_env()` helper to build `Wilrise` kwargs from `WILRISE_*` environment variables.
 - Documentation: production readiness (errors, configuration, observability, versioning, runbook, architecture).
 
-[Unreleased]: https://github.com/your-username/wilrise/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/your-username/wilrise/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/your-username/wilrise/releases/tag/v0.1.1
 [0.1.0]: https://github.com/your-username/wilrise/releases/tag/v0.1.0

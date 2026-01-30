@@ -8,6 +8,12 @@
 
 （暂无）
 
+## [0.1.1] - 2025-01-30
+
+### 新增
+
+- README 常见问题：JSON-RPC 数组/对象 params（按位置与按名称绑定）及如何接收“对象数组”参数。
+
 ## [0.1.0] - 2025-01-30
 
 首个公开发布。
@@ -22,5 +28,6 @@
 - 可选 `from_env()`：从 `WILRISE_*` 环境变量构建 `Wilrise` 的 kwargs。
 - 文档：生产就绪相关（errors、configuration、observability、versioning、runbook、architecture）。
 
-[未发布]: https://github.com/your-username/wilrise/compare/v0.1.0...HEAD
+[未发布]: https://github.com/your-username/wilrise/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/your-username/wilrise/releases/tag/v0.1.1
 [0.1.0]: https://github.com/your-username/wilrise/releases/tag/v0.1.0
