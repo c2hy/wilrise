@@ -504,28 +504,60 @@ class Wilrise:
             return methods[0]
         return f"batch({len(methods)}) [{', '.join(methods)}]"
 
+    def _format_rpc_status(
+        self,
+        response_payload: dict[str, Any] | list[dict[str, Any]] | None,
+        response: Response,
+    ) -> tuple[str, list[int] | None]:
+        """From JSON-RPC response body compute status for log: (display_str, rpc_codes)."""
+        if response_payload is None:
+            # 无 body 表示未报错（如 204 通知），显示 OK
+            return "OK", None
+        if isinstance(response_payload, dict):
+            if "error" in response_payload:
+                code = response_payload["error"]["code"]
+                return str(code), [code]
+            return "OK", None
+        # batch: list of response dicts
+        codes: list[int] = []
+        parts: list[str] = []
+        for item in response_payload:
+            if isinstance(item, dict) and "error" in item:
+                c = item["error"]["code"]
+                codes.append(c)
+                parts.append(str(c))
+            else:
+                parts.append("OK")
+        return ", ".join(parts), codes if codes else None
+
     async def _log_request_complete(
         self,
         context: RpcContext,
         start_time: float,
         response: Response,
         error: BaseException | None = None,
+        *,
+        response_payload: dict[str, Any] | list[dict[str, Any]] | None = None,
     ) -> None:
         duration_ms = (time.perf_counter() - start_time) * 1000
         if self._log_requests:
             methods: list[str] = getattr(context.request.state, "_rpc_methods", [])
             method_str = self._format_rpc_methods(methods)
+            status_str, rpc_codes = self._format_rpc_status(response_payload, response)
+            extra: dict[str, Any] = {
+                "request_id": context.http_request_id,
+                "rpc_methods": methods,
+                "status_code": response.status_code,
+                "duration_ms": round(duration_ms, 2),
+            }
+            if rpc_codes is not None:
+                extra["rpc_codes"] = rpc_codes
             self._logger.info(
                 "JSON-RPC %s → %s in %.2fms",
                 method_str,
-                response.status_code,
+                status_str,
                 duration_ms,
-                extra={
-                    "request_id": context.http_request_id,
-                    "rpc_methods": methods,
-                    "status_code": response.status_code,
-                    "duration_ms": round(duration_ms, 2),
-                },
+                extra=extra,
             )
         for logger_fn in self._request_loggers:
             out = logger_fn(context, duration_ms, response, error)
@@ -749,11 +781,11 @@ class Wilrise:
         )
 
         if request.method != "POST":
-            r = JSONResponse(
-                self._invalid_request(None),
-                status_code=405,
+            invalid_body = self._invalid_request(None)
+            r = JSONResponse(invalid_body, status_code=405)
+            await self._log_request_complete(
+                top_context, start_time, r, response_payload=invalid_body
             )
-            await self._log_request_complete(top_context, start_time, r)
             self._schedule_background_tasks(request)
             return r
 
@@ -773,26 +805,28 @@ class Wilrise:
                             "max_request_size": self._max_request_size,
                         },
                     )
-                r = JSONResponse(
-                    self._error(INVALID_REQUEST, "Request body too large", None),
-                    status_code=413,
+                body_too_large = self._error(
+                    INVALID_REQUEST, "Request body too large", None
                 )
-                await self._log_request_complete(top_context, start_time, r)
+                r = JSONResponse(body_too_large, status_code=413)
+                await self._log_request_complete(
+                    top_context, start_time, r, response_payload=body_too_large
+                )
                 self._schedule_background_tasks(request)
                 return r
 
         try:
             body = await request.json()
         except Exception:
-            r = JSONResponse(
-                {
-                    "jsonrpc": "2.0",
-                    "error": {"code": PARSE_ERROR, "message": "Parse error"},
-                    "id": None,
-                },
-                status_code=400,
+            parse_error_body = {
+                "jsonrpc": "2.0",
+                "error": {"code": PARSE_ERROR, "message": "Parse error"},
+                "id": None,
+            }
+            r = JSONResponse(parse_error_body, status_code=400)
+            await self._log_request_complete(
+                top_context, start_time, r, response_payload=parse_error_body
             )
-            await self._log_request_complete(top_context, start_time, r)
             self._schedule_background_tasks(request)
             return r
 
@@ -808,26 +842,26 @@ class Wilrise:
                             "max_batch_size": self._max_batch_size,
                         },
                     )
-                r = JSONResponse(
-                    self._invalid_request(
-                        None,
-                        data={
-                            "reason": "batch_size_exceeded",
-                            "batch_size": len(batch),
-                            "max_batch_size": self._max_batch_size,
-                        },
-                    ),
-                    status_code=400,
+                batch_size_body = self._invalid_request(
+                    None,
+                    data={
+                        "reason": "batch_size_exceeded",
+                        "batch_size": len(batch),
+                        "max_batch_size": self._max_batch_size,
+                    },
                 )
-                await self._log_request_complete(top_context, start_time, r)
+                r = JSONResponse(batch_size_body, status_code=400)
+                await self._log_request_complete(
+                    top_context, start_time, r, response_payload=batch_size_body
+                )
                 self._schedule_background_tasks(request)
                 return r
             if len(batch) == 0:
-                r = JSONResponse(
-                    self._invalid_request(None),
-                    status_code=400,
+                empty_batch_body = self._invalid_request(None)
+                r = JSONResponse(empty_batch_body, status_code=400)
+                await self._log_request_complete(
+                    top_context, start_time, r, response_payload=empty_batch_body
                 )
-                await self._log_request_complete(top_context, start_time, r)
                 self._schedule_background_tasks(request)
                 return r
             responses: list[dict[str, Any]] = []
@@ -840,9 +874,14 @@ class Wilrise:
                         responses.append(resp)
             if len(responses) == 0:
                 r = Response(status_code=204)
+                await self._log_request_complete(
+                    top_context, start_time, r, response_payload=None
+                )
             else:
                 r = JSONResponse(responses, status_code=200)
-            await self._log_request_complete(top_context, start_time, r)
+                await self._log_request_complete(
+                    top_context, start_time, r, response_payload=responses
+                )
             self._schedule_background_tasks(request)
             return r
 
@@ -851,17 +890,22 @@ class Wilrise:
             resp = await self._process_single(single_body, request)
             if resp is None:
                 r = Response(status_code=204)
+                await self._log_request_complete(
+                    top_context, start_time, r, response_payload=None
+                )
             else:
                 r = JSONResponse(resp, status_code=200)
-            await self._log_request_complete(top_context, start_time, r)
+                await self._log_request_complete(
+                    top_context, start_time, r, response_payload=resp
+                )
             self._schedule_background_tasks(request)
             return r
 
-        r = JSONResponse(
-            self._invalid_request(None),
-            status_code=400,
+        invalid_body_final = self._invalid_request(None)
+        r = JSONResponse(invalid_body_final, status_code=400)
+        await self._log_request_complete(
+            top_context, start_time, r, response_payload=invalid_body_final
         )
-        await self._log_request_complete(top_context, start_time, r)
         self._schedule_background_tasks(request)
         return r
 

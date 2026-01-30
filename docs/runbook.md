@@ -42,7 +42,8 @@
 
 - **request_id** / **http_request_id**：来自 HTTP 头 `X-Request-ID`，用于关联同一次请求的日志与下游调用。
 - **rpc_methods**：本次请求调用的 RPC 方法名（单条或 batch 列表）。
-- **status_code**：HTTP 状态码（200、400、413 等）。
+- **status_code**：HTTP 状态码（请求日志 `extra` 中保留）。
+- **rpc_codes** / 日志消息中的状态：JSON-RPC 错误码（如 -32601、-32001）或 `OK`，便于区分业务错误与成功。
 - **duration_ms**：请求耗时（毫秒），便于发现慢请求。
 
 建议在网关或入口统一设置 `X-Request-ID`，便于全链路排查。详见 [Observability](observability.md)。

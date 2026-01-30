@@ -117,10 +117,13 @@ app = Wilrise(log_level=logging.INFO)
 
 - `request_id`：来自 HTTP 头 `X-Request-ID`，若未设置则为 `"unknown"`
 - `rpc_methods`：本次请求的 RPC 方法名列表（单请求一个元素，batch 为多个）
-- `status_code`：HTTP 状态码
+- `status_code`：HTTP 状态码（保留用于兼容）
 - `duration_ms`：请求耗时（毫秒）
+- `rpc_codes`：当存在 JSON-RPC 错误时，为错误码列表（单条为 `[code]`，batch 为各条错误码）；成功或无 body 时不出现
 
-日志消息格式示例：`JSON-RPC add → 200 in 12.50ms` 或 `JSON-RPC batch(2) [add, get] → 200 in 45ms`。
+日志消息中的“状态”为 **JSON-RPC 语义**：成功显示 `OK`，单条错误显示错误码（如 `-32601`），batch 显示逗号分隔的每条结果（如 `OK, -32001`）；无 body（如 204 通知）也表示未报错，显示 `OK`。
+
+日志消息格式示例：`JSON-RPC add → OK in 12.50ms`、`JSON-RPC get_user → -32001 in 5.00ms`、`JSON-RPC batch(2) [add, get] → OK, -32601 in 45ms`。
 
 ## 结构化日志（JSON）
 
@@ -143,6 +146,7 @@ class JsonFormatter(logging.Formatter):
             "request_id": getattr(record, "request_id", None),
             "rpc_methods": getattr(record, "rpc_methods", None),
             "status_code": getattr(record, "status_code", None),
+            "rpc_codes": getattr(record, "rpc_codes", None),
             "duration_ms": getattr(record, "duration_ms", None),
         }
         return json.dumps(log)
