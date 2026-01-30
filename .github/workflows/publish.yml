@@ -27,3 +27,5 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+          # 使用 token 时关闭 attestations，避免与 Trusted Publishers 冲突的警告
+          attestations: false
