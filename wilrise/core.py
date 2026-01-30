@@ -509,7 +509,7 @@ class Wilrise:
         response_payload: dict[str, Any] | list[dict[str, Any]] | None,
         response: Response,
     ) -> tuple[str, list[int] | None]:
-        """From JSON-RPC response body compute status for log: (display_str, rpc_codes)."""
+        """Compute log status from JSON-RPC response: (display_str, rpc_codes)."""
         if response_payload is None:
             # 无 body 表示未报错（如 204 通知），显示 OK
             return "OK", None
@@ -522,7 +522,7 @@ class Wilrise:
         codes: list[int] = []
         parts: list[str] = []
         for item in response_payload:
-            if isinstance(item, dict) and "error" in item:
+            if "error" in item:
                 c = item["error"]["code"]
                 codes.append(c)
                 parts.append(str(c))
