@@ -1,5 +1,5 @@
-# 推送版本 tag 时自动构建并发布到 PyPI
-# 用法：git tag v0.1.0 && git push origin v0.1.0
+# 仅当推送的 tag 指向 main 上的提交且 CI 通过时才构建并发布到 PyPI
+# 流程：在 develop 上 bump 版本并更新 CHANGELOG → 合并到 main → 在 main 上打 tag 并推送
 name: Publish to PyPI
 
 on:
@@ -7,10 +7,46 @@ on:
     tags: ["v*"]
 
 jobs:
-  publish:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Ruff (format)
+        run: uv run ruff format --check .
+
+      - name: Ruff (lint)
+        run: uv run ruff check .
+
+      - name: Pyright
+        run: uv run pyright
+
+      - name: Pytest
+        run: uv run pytest -v
+
+  publish:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tag is on main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor ${{ github.sha }} origin/main || (echo "Tag must point to a commit on main. Merge to main first, then create and push the tag." && exit 1)
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
