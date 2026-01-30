@@ -46,7 +46,8 @@ jobs:
       - name: Ensure tag is on main
         run: |
           git fetch origin main
-          git merge-base --is-ancestor ${{ github.sha }} origin/main || (echo "Tag must point to a commit on main. Merge to main first, then create and push the tag." && exit 1)
+          COMMIT_SHA=$(git rev-parse "${GITHUB_REF}^{}")
+          git merge-base --is-ancestor "$COMMIT_SHA" origin/main || (echo "Tag must point to a commit on main. Merge to main first, then create and push the tag." && exit 1)
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
