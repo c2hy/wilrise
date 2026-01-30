@@ -309,6 +309,11 @@ With FastAPI: `app.mount("/rpc", rpc.as_asgi())`.
 
 ## FAQ
 
+- **Array params vs object params — how are they received?**  
+  In JSON-RPC 2.0, `params` may be either an **array** or an **object**. If the client sends **array** params (e.g. `"params": [1, 2]`), the server binds them **by position**: the first element to the first parameter, the second to the second, and so on. If the client sends **object** params (e.g. `"params": {"a": 1, "b": 2}`), the server binds **by name**. Method signatures must match: for positional binding the number and order of arguments must match the array length and order; for named binding the keys must match the parameter names (or aliases).
+
+  **If the server wants to receive an array of objects** (e.g. a list of items to batch-create): that array is the **value of one parameter**. With **positional** params, the client sends an array whose single element is your list: `"params": [[{"id": 1}, {"id": 2}]]` → the method’s first parameter gets the inner array. With **named** params, the client sends an object with one key: `"params": {"items": [{"id": 1}, {"id": 2}]}` → the parameter named `items` gets the array. Example: `def batch_create(items: list[dict]) -> int` can be called with `"params": {"items": [...]}`  or `"params": [[...]]`.
+
 - **How can clients discover available methods?**  
   JSON-RPC 2.0 does not require a schema; this framework does not ship OpenAPI or built-in method discovery. You can add your own RPC method that returns the list of method names (and param docs if you maintain them), or serve OpenRPC / self-describing docs.
 
