@@ -319,6 +319,58 @@ class Wilrise:
                 return rpc_params[param_meta.alias]
             return rpc_params.get(name)
 
+        # First param is BaseModel and its key is absent: use entire rpc_params
+        # for that param, then resolve the rest by key/Use/default.
+        if (
+            param_names
+            and BaseModel is not None
+            and PydanticValidationError is not None
+        ):
+            first_name = param_names[0]
+            _, _first_default, first_meta = sig[first_name]
+            first_param = fn_sig.parameters[first_name]
+            first_effective = _effective_annotation(first_param.annotation)
+            if isinstance(first_effective, type) and issubclass(
+                first_effective, BaseModel
+            ) and not _key_present(first_name, first_meta):
+                try:
+                    first_instance = first_effective.model_validate(  # type: ignore[union-attr]
+                        rpc_params
+                    )
+                except PydanticValidationError as e:
+                    raise ParamsValidationError(
+                        cast(list[dict[str, Any]], e.errors())
+                    ) from e
+                dep_cache = getattr(
+                    request.state, "_wilrise_dep_cache", {}
+                )
+                resolved = [first_instance] + [None] * (len(param_names) - 1)
+                for i in range(1, len(param_names)):
+                    name = param_names[i]
+                    _, default, param_meta = sig[name]
+                    if _key_present(name, param_meta):
+                        resolved[i] = _get_value(name, param_meta)
+                    elif isinstance(default, Use):
+                        key = id(default.provider)
+                        if key in dep_cache:
+                            resolved[i] = dep_cache[key]
+                        else:
+                            dep = default(request)
+                            if asyncio.iscoroutine(dep):
+                                dep = await dep
+                            dep_cache[key] = dep
+                            resolved[i] = dep
+                    elif default is not ...:
+                        resolved[i] = default
+                    else:
+                        raise ValueError(f"Missing required argument: {name}")
+                for i in range(1, len(param_names)):
+                    param = fn_sig.parameters[param_names[i]]
+                    resolved[i] = _validate_param(
+                        param.annotation, resolved[i], param_names[i]
+                    )
+                return resolved
+
         if (
             len(param_names) == 1
             and BaseModel is not None

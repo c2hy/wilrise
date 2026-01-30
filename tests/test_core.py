@@ -475,6 +475,73 @@ class TestPydanticValidation:
         assert isinstance(args[0], Data)
         assert args[0].x == 42
 
+    async def test_first_param_base_model_key_absent_rest_by_use_or_default(
+        self,
+    ) -> None:
+        """First param is BaseModel and key absent: entire params as that model;
+        rest are resolved by key/Use/default (e.g. params + db + user_id)."""
+        from pydantic import BaseModel
+
+        from wilrise import Use
+
+        class CreateEmotionRequest(BaseModel):
+            emotion: str
+
+        app = Wilrise()
+        injected: list[object] = []
+
+        def get_db(request: Request) -> str:
+            injected.append(request)
+            return "db_session"
+
+        def get_user_id(request: Request) -> str:
+            return "user_42"
+
+        @app.method
+        def create_emotion(
+            params: CreateEmotionRequest,
+            db: str = Use(get_db),
+            user_id: str = Use(get_user_id),
+        ) -> dict:
+            return {
+                "emotion": params.emotion,
+                "db": db,
+                "user_id": user_id,
+            }
+
+        # Client sends params without key "params" (whole body is the payload).
+        req = _fake_request()
+        args = await app.resolve_method_params(
+            "create_emotion", {"emotion": "happy"}, req
+        )
+        assert len(args) == 3
+        assert isinstance(args[0], CreateEmotionRequest)
+        assert args[0].emotion == "happy"
+        assert args[1] == "db_session"
+        assert args[2] == "user_42"
+        assert injected == [req]
+
+    async def test_first_param_base_model_key_present_still_by_key(self) -> None:
+        """When first param's key is present, use value for that key (existing)."""
+        from pydantic import BaseModel
+
+        class Payload(BaseModel):
+            x: int
+
+        app = Wilrise()
+
+        @app.method
+        def f(params: Payload, suffix: str = "!") -> str:
+            return f"{params.x}{suffix}"
+
+        args = await app.resolve_method_params(
+            "f", {"params": {"x": 10}, "suffix": "?"}, _fake_request()
+        )
+        assert len(args) == 2
+        assert isinstance(args[0], Payload)
+        assert args[0].x == 10
+        assert args[1] == "?"
+
     def test_e2e_pydantic_valid_params(self) -> None:
         """E2E: valid params for single BaseModel param returns result."""
         from pydantic import BaseModel
