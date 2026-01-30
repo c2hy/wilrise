@@ -8,6 +8,16 @@
 
 （暂无）
 
+## [0.1.2] - 2025-01-30
+
+### 新增
+
+- 发布工作流：仅当推送的 tag 指向 main 上的提交时触发；发布前先运行 CI（lint、类型检查、测试）。
+
+### 修复
+
+- `wilrise.core` 中 Ruff E501（docstring 行宽）与 Pyright reportUnnecessaryIsInstance。
+
 ## [0.1.1] - 2025-01-30
 
 ### 新增
@@ -28,6 +38,7 @@
 - 可选 `from_env()`：从 `WILRISE_*` 环境变量构建 `Wilrise` 的 kwargs。
 - 文档：生产就绪相关（errors、configuration、observability、versioning、runbook、architecture）。
 
-[未发布]: https://github.com/your-username/wilrise/compare/v0.1.1...HEAD
+[未发布]: https://github.com/your-username/wilrise/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/your-username/wilrise/releases/tag/v0.1.2
 [0.1.1]: https://github.com/your-username/wilrise/releases/tag/v0.1.1
 [0.1.0]: https://github.com/your-username/wilrise/releases/tag/v0.1.0

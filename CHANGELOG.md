@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - None yet.
 
+## [0.1.2] - 2025-01-30
+
+### Added
+
+- Publish workflow: only trigger when pushed tag points to a commit on main; run CI (lint, type-check, test) before publishing to PyPI.
+
+### Fixed
+
+- Ruff E501 (docstring line length) and Pyright reportUnnecessaryIsInstance in `wilrise.core`.
+
 ## [0.1.1] - 2025-01-30
 
 ### Added
@@ -28,6 +38,7 @@ First public release.
 - Optional `from_env()` helper to build `Wilrise` kwargs from `WILRISE_*` environment variables.
 - Documentation: production readiness (errors, configuration, observability, versioning, runbook, architecture).
 
-[Unreleased]: https://github.com/your-username/wilrise/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/your-username/wilrise/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/your-username/wilrise/releases/tag/v0.1.2
 [0.1.1]: https://github.com/your-username/wilrise/releases/tag/v0.1.1
 [0.1.0]: https://github.com/your-username/wilrise/releases/tag/v0.1.0
