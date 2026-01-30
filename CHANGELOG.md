@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- Publish workflow: only trigger when pushed tag points to a commit on main; run CI (lint, type-check, test) before publishing to PyPI.
+- Publish workflow: trigger only when tag is on main; run CI before publishing to PyPI.
 
 ### Fixed
 
