@@ -317,9 +317,7 @@ class Wilrise:
         """Close all provider generators registered for this request (so their
         finally blocks run, e.g. session.close()).
         """
-        cleanup: list[Any] = getattr(
-            request.state, "_wilrise_gen_cleanup", []
-        )
+        cleanup: list[Any] = getattr(request.state, "_wilrise_gen_cleanup", [])
         request.state._wilrise_gen_cleanup = []
         for g in cleanup:
             try:
@@ -381,9 +379,11 @@ class Wilrise:
             _, _first_default, first_meta = sig[first_name]
             first_param = fn_sig.parameters[first_name]
             first_effective = _effective_annotation(first_param.annotation)
-            if isinstance(first_effective, type) and issubclass(
-                first_effective, BaseModel
-            ) and not _key_present(first_name, first_meta):
+            if (
+                isinstance(first_effective, type)
+                and issubclass(first_effective, BaseModel)
+                and not _key_present(first_name, first_meta)
+            ):
                 try:
                     first_instance = first_effective.model_validate(  # type: ignore[union-attr]
                         rpc_params
@@ -392,10 +392,11 @@ class Wilrise:
                     raise ParamsValidationError(
                         cast(list[dict[str, Any]], e.errors())
                     ) from e
-                dep_cache = getattr(
-                    request.state, "_wilrise_dep_cache", {}
+                dep_cache = getattr(request.state, "_wilrise_dep_cache", {})
+                resolved = cast(
+                    list[Any],
+                    [first_instance] + [None] * (len(param_names) - 1),
                 )
-                resolved = [first_instance] + [None] * (len(param_names) - 1)
                 for i in range(1, len(param_names)):
                     name = param_names[i]
                     _, default, param_meta = sig[name]

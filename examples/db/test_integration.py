@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+from typing import Any, cast
 
 from starlette.testclient import TestClient
 
@@ -59,8 +60,9 @@ def test_list_users() -> None:
     assert r.status_code == 200
     result = r.json()["result"]
     assert isinstance(result, list)
-    assert len(result) >= 1
-    names = [u["name"] for u in result]
+    result_list = cast(list[dict[str, Any]], result)
+    assert len(result_list) >= 1
+    names: list[str] = [u["name"] for u in result_list]
     assert "Alice" in names
 
 
