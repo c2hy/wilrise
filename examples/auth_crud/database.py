@@ -32,24 +32,19 @@ def init_db() -> None:
     Base.metadata.create_all(bind=engine)
 
 
-def get_db_session(request: Request) -> Session:
-    """Dependency: provide a SQLAlchemy session. Stored in request.state for cleanup."""
-    if not hasattr(request.state, "db_session") or request.state.db_session is None:
-        request.state.db_session = SessionLocal()
-    return request.state.db_session
-
-
-def close_db_session(request: Request) -> None:
-    """Close session after request; rollback uncommitted work (transaction safety)."""
-    if hasattr(request.state, "db_session") and request.state.db_session is not None:
-        session = request.state.db_session
+def get_db_session(request: Request):
+    """Dependency: provide a SQLAlchemy session. Yields session; framework closes
+    the generator after the RPC request so this finally runs (session.close()).
+    """
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
         try:
             session.rollback()
         except Exception:
             pass
-        finally:
-            session.close()
-            request.state.db_session = None
+        session.close()
 
 
 def get_user_by_username(session: Session, username: str) -> User | None:

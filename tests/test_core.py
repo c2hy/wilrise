@@ -369,6 +369,51 @@ class TestResolveParams:
         assert args == ["singleton", "singleton"]
         assert call_count == 1
 
+    async def test_use_provider_sync_generator_injects_first_yield(self) -> None:
+        """Use(provider) when provider returns sync generator: first yield is
+        injected; generator is not cached (each param gets own gen).
+        """
+        app = Wilrise()
+        closed: list[str] = []
+
+        def gen_provider(request: Request):
+            try:
+                yield "from_gen"
+            finally:
+                closed.append("sync")
+
+        @app.method
+        def f(tag: str = Use(gen_provider)) -> str:
+            return tag
+
+        req = _fake_request()
+        args = await app.resolve_method_params("f", {}, req)
+        assert args == ["from_gen"]
+        # Gen not closed yet (resolve_method_params does not run cleanup)
+        assert closed == []
+
+    async def test_use_provider_async_generator_injects_first_yield(self) -> None:
+        """Use(provider) when provider returns async generator: first yield
+        is injected.
+        """
+        app = Wilrise()
+        closed: list[str] = []
+
+        async def async_gen_provider(request: Request):
+            try:
+                yield "from_async_gen"
+            finally:
+                closed.append("async")
+
+        @app.method
+        def f(tag: str = Use(async_gen_provider)) -> str:
+            return tag
+
+        req = _fake_request()
+        args = await app.resolve_method_params("f", {}, req)
+        assert args == ["from_async_gen"]
+        assert closed == []
+
 
 # ---------------------------------------------------------------------------
 # Pydantic parameter validation
@@ -1373,6 +1418,147 @@ class TestUse:
 
         u = Use(provider)
         assert u() == "ok"
+
+
+# ---------------------------------------------------------------------------
+# Use(provider) returning generator/async generator: first yield injected,
+# generator closed after RPC request ends
+# ---------------------------------------------------------------------------
+
+
+class TestUseProviderGenerator:
+    """When Use(provider) returns a generator or async generator: first yield
+    is injected; framework closes the generator after the RPC request so
+    finally (e.g. session.close()) runs.
+    """
+
+    def test_use_provider_sync_generator_closed_after_request(self) -> None:
+        """Sync generator provider: first yield injected; gen.close() called
+        after request (finally runs).
+        """
+        app = Wilrise()
+        closed: list[str] = []
+
+        def gen_provider(request: Request):
+            try:
+                yield "session_handle"
+            finally:
+                closed.append("sync")
+
+        @app.method
+        def use_session(db: str = Use(gen_provider)) -> str:
+            return db
+
+        client = TestClient(app.as_asgi())
+        r = client.post(
+            "/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "use_session",
+                "params": {},
+                "id": 1,
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["result"] == "session_handle"
+        assert closed == ["sync"]
+
+    def test_use_provider_async_generator_closed_after_request(self) -> None:
+        """Async generator provider: first yield injected; aclose() called
+        after request (finally runs).
+        """
+        app = Wilrise()
+        closed: list[str] = []
+
+        async def async_gen_provider(request: Request):
+            try:
+                yield "async_session"
+            finally:
+                closed.append("async")
+
+        @app.method
+        def use_session(db: str = Use(async_gen_provider)) -> str:
+            return db
+
+        client = TestClient(app.as_asgi())
+        r = client.post(
+            "/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "use_session",
+                "params": {},
+                "id": 1,
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["result"] == "async_session"
+        assert closed == ["async"]
+
+    def test_use_provider_generator_closed_when_handler_raises(self) -> None:
+        """When handler raises, provider generator is still closed (finally runs)."""
+        app = Wilrise()
+        closed: list[str] = []
+
+        def gen_provider(request: Request):
+            try:
+                yield "db"
+            finally:
+                closed.append("closed")
+
+        @app.method
+        def fail(db: str = Use(gen_provider)) -> str:
+            raise ValueError("handler error")
+
+        client = TestClient(app.as_asgi())
+        r = client.post(
+            "/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "fail",
+                "params": {},
+                "id": 1,
+            },
+        )
+        assert r.status_code == 200
+        assert "error" in r.json()
+        assert closed == ["closed"]
+
+    def test_use_provider_generator_not_cached_per_param(self) -> None:
+        """When provider returns a generator, each Use(provider) param gets
+        its own gen (first yield each); both gens closed after request.
+        """
+        app = Wilrise()
+        closed_count = 0
+
+        def gen_provider(request: Request):
+            nonlocal closed_count
+            try:
+                yield id(request)
+            finally:
+                closed_count += 1
+
+        @app.method
+        def two(
+            a: int = Use(gen_provider),
+            b: int = Use(gen_provider),
+        ) -> list[int]:
+            return [a, b]
+
+        client = TestClient(app.as_asgi())
+        r = client.post(
+            "/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "two",
+                "params": {},
+                "id": 1,
+            },
+        )
+        assert r.status_code == 200
+        result = r.json()["result"]
+        assert len(result) == 2
+        assert result[0] == result[1]  # same request id
+        assert closed_count == 2  # two gens, both closed
 
 
 # ---------------------------------------------------------------------------

@@ -59,10 +59,13 @@ class DBSession:
         return self._data.get(user_id)
 
 
-async def get_db_session(request: Request) -> DBSession:
-    """Dependency: provide DB session. Async; can access request."""
-    # In real apps: get from pool, request.state, etc.
-    return DBSession()
+def get_db_session(request: Request):
+    """Dependency: provide DB session. Generator so framework closes after RPC."""
+    session = DBSession()
+    try:
+        yield session
+    finally:
+        pass  # mock session needs no close
 
 
 # ---------- Methods registered directly on app ----------

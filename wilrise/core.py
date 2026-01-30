@@ -284,6 +284,55 @@ class Wilrise:
             result[name] = (i, default, param_meta)
         return result
 
+    async def _unwrap_provider_result(
+        self, dep: Any, request: Request
+    ) -> tuple[Any, bool]:
+        """If provider returned a generator/async generator: take first yield as
+        value, register gen for cleanup after RPC; return (value, True).
+        Otherwise return (dep, False).
+        """
+        if inspect.isgenerator(dep):
+            first = next(dep)
+            cleanup: list[Any] = getattr(
+                request.state, "_wilrise_gen_cleanup", None
+            )
+            if cleanup is None:
+                request.state._wilrise_gen_cleanup = []
+                cleanup = request.state._wilrise_gen_cleanup
+            cleanup.append(dep)
+            return (first, True)
+        if inspect.isasyncgen(dep):
+            first = await dep.__anext__()
+            cleanup = getattr(request.state, "_wilrise_gen_cleanup", None)
+            if cleanup is None:
+                request.state._wilrise_gen_cleanup = []
+                cleanup = request.state._wilrise_gen_cleanup
+            cleanup.append(dep)
+            return (first, True)
+        return (dep, False)
+
+    async def _close_provider_generators(self, request: Request) -> None:
+        """Close all provider generators registered for this request (so their
+        finally blocks run, e.g. session.close()).
+        """
+        cleanup: list[Any] = getattr(
+            request.state, "_wilrise_gen_cleanup", []
+        )
+        request.state._wilrise_gen_cleanup = []
+        for g in cleanup:
+            try:
+                if inspect.isasyncgen(g):
+                    await g.aclose()
+                else:
+                    g.close()
+            except Exception as e:
+                if self._log_requests:
+                    self._logger.debug(
+                        "Provider generator close failed: %s",
+                        e,
+                        exc_info=True,
+                    )
+
     async def _resolve_params(
         self,
         fn: Callable[..., Any],
@@ -358,7 +407,11 @@ class Wilrise:
                             dep = default(request)
                             if asyncio.iscoroutine(dep):
                                 dep = await dep
-                            dep_cache[key] = dep
+                            dep, is_gen = await self._unwrap_provider_result(
+                                dep, request
+                            )
+                            if not is_gen:
+                                dep_cache[key] = dep
                             resolved[i] = dep
                     elif default is not ...:
                         resolved[i] = default
@@ -407,7 +460,9 @@ class Wilrise:
                     dep = default(request)
                     if asyncio.iscoroutine(dep):
                         dep = await dep
-                    dep_cache[key] = dep
+                    dep, is_gen = await self._unwrap_provider_result(dep, request)
+                    if not is_gen:
+                        dep_cache[key] = dep
                     resolved[i] = dep
             elif default is not ...:
                 resolved[i] = default
@@ -484,6 +539,7 @@ class Wilrise:
         parser = self._request_parser or _default_request_parser
         parsed, invalid_data = parser.parse(body, request)
         if parsed is None:
+            await self._close_provider_generators(request)
             return self._invalid_request(body.get("id"), data=invalid_data)
 
         method_name = parsed.method
@@ -505,6 +561,7 @@ class Wilrise:
         request.state.rpc_context = context
 
         if method_name not in self._methods:
+            await self._close_provider_generators(request)
             if is_notification:
                 return None
             return self._error(
@@ -519,6 +576,7 @@ class Wilrise:
             if asyncio.iscoroutine(out):
                 out = await out
             if out is not None:
+                await self._close_provider_generators(request)
                 if is_notification:
                     return None
                 return cast("dict[str, Any]", out)
@@ -527,6 +585,7 @@ class Wilrise:
         try:
             args = await self._resolve_params(fn, params, request)
         except ParamsValidationError as e:
+            await self._close_provider_generators(request)
             if is_notification:
                 return None
             return self._error(
@@ -544,6 +603,7 @@ class Wilrise:
             if "Missing required argument:" in msg:
                 arg_name = msg.replace("Missing required argument:", "").strip()
                 validation_errors = [{"loc": [arg_name], "msg": msg, "type": "missing"}]
+            await self._close_provider_generators(request)
             if is_notification:
                 return None
             return self._error(
@@ -553,10 +613,12 @@ class Wilrise:
                 data={"validation_errors": validation_errors},
             )
         except RpcError as e:
+            await self._close_provider_generators(request)
             if is_notification:
                 return None
             return self._error(e.code, e.message, req_id, data=e.data)
         except Exception as e:
+            await self._close_provider_generators(request)
             if self._exception_mapper:
                 mapped = self._exception_mapper.map_exception(e, context)
                 if mapped is not None:
@@ -591,10 +653,12 @@ class Wilrise:
             if asyncio.iscoroutine(result):
                 result = await result
         except RpcError as e:
+            await self._close_provider_generators(request)
             if is_notification:
                 return None
             return self._error(e.code, e.message, req_id, data=e.data)
         except Exception as e:
+            await self._close_provider_generators(request)
             if self._exception_mapper:
                 mapped = self._exception_mapper.map_exception(e, context)
                 if mapped is not None:
@@ -624,6 +688,7 @@ class Wilrise:
             return self._error(INTERNAL_ERROR, _err_msg, req_id, data=_err_data)
 
         if is_notification:
+            await self._close_provider_generators(request)
             return None
         # Ensure result is JSON-serializable; return -32603 on failure
         try:
@@ -644,11 +709,13 @@ class Wilrise:
             )
             if ser_data is None:
                 ser_data = {"request_id": context.http_request_id}
+            await self._close_provider_generators(request)
             return self._error(INTERNAL_ERROR, ser_msg, req_id, data=ser_data)
         for hook in self._after_call_hooks:
             out = hook(method_name, result, request)
             if asyncio.iscoroutine(out):
                 await out
+        await self._close_provider_generators(request)
         return self._get_builder().build_result(result, req_id)
 
     def _schedule_background_tasks(self, request: Request) -> None:
@@ -664,6 +731,7 @@ class Wilrise:
     async def _handle_request(self, request: Request) -> Response:
         """Single HTTP entry: POST only; batch/single dispatch, then _process_single."""
         request.state._wilrise_dep_cache = {}
+        request.state._wilrise_gen_cleanup = []
         request.state.background_tasks = []
         # RPC method names for this HTTP request (for logging)
         request.state._rpc_methods = []

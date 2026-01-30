@@ -6,14 +6,10 @@
 from typing import Annotated, Any
 
 from sqlalchemy.orm import Session
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import Response
 from wilrise import Param, Use, Wilrise
 
 from .auth import create_access_token, get_current_user, hash_password, verify_password
 from .database import (
-    close_db_session,
     get_db_session,
     get_user_by_id,
     get_user_by_username,
@@ -30,21 +26,11 @@ from .schemas import (
 )
 
 
-# ---------- Middleware: close DB session after request ----------
-class CloseDbMiddleware(BaseHTTPMiddleware):
-    """Close SQLAlchemy session after each request."""
-
-    async def dispatch(self, request: Request, call_next: Any) -> Response:
-        try:
-            return await call_next(request)
-        finally:
-            close_db_session(request)
-
-
 # ---------- App ----------
 # debug=True for demo only; use debug=False or from_env() in production (see README)
+# Session lifecycle: get_db_session is a generator; framework closes it after each
+# RPC request so session.close() runs in the generator's finally.
 app = Wilrise(debug=True)
-app.add_middleware(CloseDbMiddleware)
 
 # Create tables on import (idempotent)
 init_db()
