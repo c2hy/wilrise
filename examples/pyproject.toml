@@ -1,0 +1,37 @@
+[project]
+name = "wilrise-example"
+version = "0.1.0"
+description = "Wilrise Simple"
+requires-python = ">=3.12"
+dependencies = [
+    "wilrise",
+    "uvicorn[standard]>=0.32.0",
+    "sqlalchemy>=2.0.0",
+    "pyjwt>=2.8.0",
+    "bcrypt>=4.0.0",
+    "pydantic>=2.0.0",
+    "httpx>=0.28.0",
+]
+
+[dependency-groups]
+dev = ["pyright>=1.1.0", "ruff>=0.8.0"]
+
+[tool.uv.sources]
+wilrise = { path = ".." }
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+reportMissingTypeStubs = false
+reportUnknownMemberType = "warning"
+reportUnknownVariableType = "warning"
+reportDeprecated = "warning"
+reportMissingParameterType = "warning"
+reportMissingTypeArgument = "warning"
+reportUnknownParameterType = "warning"
+reportUnknownArgumentType = "warning"
+reportUnknownLambdaType = "warning"
+reportPrivateUsage = "warning"
+reportUnusedImport = "warning"
+reportUnusedVariable = "warning"
+reportUnusedFunction = "warning"

@@ -1,0 +1,98 @@
+[project]
+name = "wilrise"
+version = "0.1.0"
+description = "A modern async JSON-RPC framework built on Starlette. Where determination rises from simplicity."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "William", email = "tkn17@qq.com" }]
+keywords = ["json-rpc", "rpc", "starlette", "asyncio", "api"]
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Starlette",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+]
+dependencies = ["starlette>=0.41.0", "uvicorn[standard]>=0.32.0"]
+
+[project.optional-dependencies]
+pydantic = ["pydantic>=2.0.0"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.0.0",
+    "ruff>=0.8.0",
+    "pyright>=1.1.0",
+    # for examples/auth_crud (IDE import resolution)
+    "sqlalchemy>=2.0.0",
+    "pyjwt>=2.8.0",
+    "bcrypt>=4.0.0",
+]
+
+[tool.uv.build-backend]
+module-name = "wilrise"
+module-root = ""
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["wilrise", "tests", "examples"]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # Pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = ["B008"] # Use(callable) in default is the framework's DI pattern
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F811"] # intentional redefinition in test routers
+"examples/auth_crud/test_concurrent.py" = ["E402"] # set AUTH_CRUD_DB before importing app
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+include = ["wilrise", "tests", "examples"]
+exclude = [
+    ".venv",
+    "**/.venv",
+    "**/__pycache__",
+    "**/site-packages",
+]
+reportMissingTypeStubs = false
+reportUnusedImport = "warning"
+reportUnusedVariable = "warning"
+# Tests may access _methods, _resolve_params via reportPrivateUsage=none
+reportPrivateUsage = "warning"
+# RPC methods are only "used" via decorator registration
+reportUnusedFunction = "warning"
+# Strict still flags unknown types; relax to warning for gradual typing
+reportUnknownParameterType = "warning"
+reportUnknownVariableType = "warning"
+reportUnknownArgumentType = "warning"
+reportUnknownLambdaType = "warning"
+reportUnknownMemberType = "warning"
+reportMissingTypeArgument = "warning"
+reportMissingParameterType = "warning"
+
+[build-system]
+requires = ["uv_build>=0.9.18,<0.10.0"]
+build-backend = "uv_build"

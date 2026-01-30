@@ -1,0 +1,1 @@
+# Wilrise JSON-RPC tests
