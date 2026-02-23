@@ -684,9 +684,13 @@ class Wilrise:
                 return None
             return self._error(INTERNAL_ERROR, _err_msg, req_id, data=_err_data)
         try:
-            result = fn(*args)
-            if asyncio.iscoroutine(result):
+            if inspect.iscoroutinefunction(fn):
+                result = fn(*args)
                 result = await result
+            else:
+                # Sync method: run in thread pool so blocking I/O doesn't block the
+                # event loop (same behavior as FastAPI/Starlette for def endpoints).
+                result = await asyncio.to_thread(fn, *args)
         except RpcError as e:
             await self._close_provider_generators(request)
             if is_notification:

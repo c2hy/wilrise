@@ -8,6 +8,17 @@
 
 （暂无）
 
+## [0.2.0] - 2025-02-23
+
+### 新增
+
+- 同步 RPC 方法（`def`）现通过 `asyncio.to_thread` 在线程池中执行，与 FastAPI/Starlette 的同步端点行为一致：
+  同步方法内的阻塞 I/O 不再阻塞事件循环或其它并发请求。
+
+### 变更
+
+- 架构文档：补充说明同步方法在线程池中执行（见 `docs/architecture.md`）。
+
 ## [0.1.2] - 2025-01-30
 
 ### 新增
@@ -38,7 +49,8 @@
 - 可选 `from_env()`：从 `WILRISE_*` 环境变量构建 `Wilrise` 的 kwargs。
 - 文档：生产就绪相关（errors、configuration、observability、versioning、runbook、architecture）。
 
-[未发布]: https://github.com/your-username/wilrise/compare/v0.1.2...HEAD
+[未发布]: https://github.com/your-username/wilrise/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/your-username/wilrise/releases/tag/v0.2.0
 [0.1.2]: https://github.com/your-username/wilrise/releases/tag/v0.1.2
 [0.1.1]: https://github.com/your-username/wilrise/releases/tag/v0.1.1
 [0.1.0]: https://github.com/your-username/wilrise/releases/tag/v0.1.0

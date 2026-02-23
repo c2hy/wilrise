@@ -11,7 +11,7 @@
 5. **方法查找**：未注册方法返回 -32601（Method not found）。
 6. **Before 钩子**：执行 `before_call_hooks`；若某钩子返回 error dict，直接响应该错误，不执行方法。
 7. **参数解析与依赖注入**：根据方法签名解析 params、执行 `Use` 依赖；缺参或校验失败返回 -32602；依赖或业务抛出 `RpcError` 则按码返回；其它未映射异常经 `ExceptionMapper` 或最终 -32603。
-8. **方法执行**：调用 RPC 方法；`RpcError` 或 `ExceptionMapper` 映射同上；未映射异常返回 -32603。
+8. **方法执行**：调用 RPC 方法。**同步方法**（`def`）在线程池中执行（`asyncio.to_thread`），与 FastAPI/Starlette 的同步端点行为一致，避免阻塞 I/O 拖慢事件循环；**异步方法**（`async def`）在事件循环中直接执行。`RpcError` 或 `ExceptionMapper` 映射同上；未映射异常返回 -32603。
 9. **结果序列化**：结果需 JSON 可序列化，否则返回 -32603。
 10. **After 钩子**：成功执行后执行 `after_call_hooks`。
 11. **请求完成日志**：内置 `log_requests` 与所有 `add_request_logger` 的 RequestLogger 被调用（context、duration_ms、response、error）。

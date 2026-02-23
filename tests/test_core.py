@@ -3,9 +3,13 @@
 # pyright: reportArgumentType=none, reportRedeclaration=none, reportPrivateUsage=none, reportUnusedFunction=none
 # Tests access _methods, _resolve_params; reportUnusedFunction for test helpers.
 
+import asyncio
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from typing import Annotated, Any, cast
+
+import httpx
 
 import pytest
 from starlette.requests import Request
@@ -1148,6 +1152,64 @@ class TestHandleRequest:
         assert data[0]["id"] == 1
         assert data[1]["result"] == 30
         assert data[1]["id"] == 2
+
+    async def test_sync_method_runs_in_thread_pool(self) -> None:
+        """Sync RPC methods run in thread pool (like FastAPI def endpoints).
+
+        If sync ran on the event loop, a blocking sync method would delay the async
+        one. We assert the async response completes first and quickly (< 30ms),
+        proving the event loop was not blocked by the sync sleep.
+        """
+        app = Wilrise()
+
+        @app.method
+        def block(seconds: float) -> str:
+            time.sleep(seconds)
+            return "done"
+
+        @app.method
+        async def fast() -> str:
+            return "ok"
+
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app.as_asgi()),
+            base_url="http://test",
+        ) as client:
+            task_slow = asyncio.create_task(
+                client.post(
+                    "/",
+                    json={
+                        "jsonrpc": "2.0",
+                        "method": "block",
+                        "params": {"seconds": 0.05},
+                        "id": 1,
+                    },
+                )
+            )
+            task_fast = asyncio.create_task(
+                client.post(
+                    "/",
+                    json={"jsonrpc": "2.0", "method": "fast", "id": 2},
+                )
+            )
+            t0 = time.monotonic()
+            done, pending = await asyncio.wait(
+                [task_slow, task_fast], return_when=asyncio.FIRST_COMPLETED
+            )
+            elapsed = time.monotonic() - t0
+            await asyncio.gather(*pending)
+
+        # First to finish must be the async method, and in well under 50ms (block
+        # would hold the loop for 50ms if sync ran on the loop).
+        assert len(done) == 1
+        first = done.pop().result()
+        assert first.json().get("result") == "ok", "fast (async) should win the race"
+        assert elapsed < 0.03, "event loop was likely blocked by sync method"
+        # Both requests must eventually succeed
+        r_slow = task_slow.result()
+        r_fast = task_fast.result()
+        assert r_slow.status_code == 200 and r_slow.json()["result"] == "done"
+        assert r_fast.status_code == 200 and r_fast.json()["result"] == "ok"
 
 
 # ---------------------------------------------------------------------------

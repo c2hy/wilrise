@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - None yet.
 
+## [0.2.0] - 2025-02-23
+
+### Added
+
+- Sync RPC methods (`def`) are now executed in a thread pool via `asyncio.to_thread`, matching FastAPI/Starlette
+  behavior for synchronous endpoints: blocking I/O in a sync method no longer blocks the event loop or other
+  concurrent requests.
+
+### Changed
+
+- Architecture doc: document that sync methods run in thread pool (see `docs/architecture.md`).
+
 ## [0.1.2] - 2025-01-30
 
 ### Added
@@ -38,7 +50,8 @@ First public release.
 - Optional `from_env()` helper to build `Wilrise` kwargs from `WILRISE_*` environment variables.
 - Documentation: production readiness (errors, configuration, observability, versioning, runbook, architecture).
 
-[Unreleased]: https://github.com/your-username/wilrise/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/your-username/wilrise/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/your-username/wilrise/releases/tag/v0.2.0
 [0.1.2]: https://github.com/your-username/wilrise/releases/tag/v0.1.2
 [0.1.1]: https://github.com/your-username/wilrise/releases/tag/v0.1.1
 [0.1.0]: https://github.com/your-username/wilrise/releases/tag/v0.1.0
