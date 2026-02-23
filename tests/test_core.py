@@ -10,7 +10,6 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated, Any, cast
 
 import httpx
-
 import pytest
 from starlette.requests import Request
 from starlette.responses import Response
