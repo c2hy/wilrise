@@ -877,6 +877,39 @@ class TestHandleRequest:
         assert data["error"].get("data") is not None
         assert "request_id" in data["error"]["data"]
 
+    @pytest.mark.skipif(
+        __import__("wilrise.params", fromlist=["BaseModel"]).BaseModel is None,
+        reason="pydantic not installed",
+    )
+    def test_result_pydantic_model_serialized_as_dict(self, client: TestClient) -> None:
+        """Returning Pydantic BaseModel is normalized to JSON-serializable dict."""
+        from pydantic import BaseModel
+
+        class HelloResponse(BaseModel):
+            message: str
+
+        app = Wilrise()
+
+        @app.method
+        def hello(name: str) -> HelloResponse:
+            return HelloResponse(message=f"Hello, {name}!")
+
+        c = TestClient(app.as_asgi())
+        r = c.post(
+            "/",
+            json={
+                "jsonrpc": "2.0",
+                "method": "hello",
+                "params": {"name": "world"},
+                "id": 1,
+            },
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert "error" not in data
+        assert data["result"] == {"message": "Hello, world!"}
+        assert data["id"] == 1
+
     def test_use_provider_exception_returns_32603(self) -> None:
         """Use(provider) when provider raises → -32603 Internal error."""
         app = Wilrise()

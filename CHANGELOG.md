@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - None yet.
 
+## [0.2.1] - 2025-02-24
+
+### Fixed
+
+- RPC methods can now return Pydantic `BaseModel` instances when `wilrise[pydantic]` is installed. The framework normalizes such results via `model_dump(mode="json")` before the JSON-serializability check and response build, so returning typed response models no longer triggers -32603 "Result is not JSON-serializable".
+
 ## [0.2.0] - 2025-02-23
 
 ### Added
@@ -50,7 +56,8 @@ First public release.
 - Optional `from_env()` helper to build `Wilrise` kwargs from `WILRISE_*` environment variables.
 - Documentation: production readiness (errors, configuration, observability, versioning, runbook, architecture).
 
-[Unreleased]: https://github.com/your-username/wilrise/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/your-username/wilrise/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/your-username/wilrise/releases/tag/v0.2.1
 [0.2.0]: https://github.com/your-username/wilrise/releases/tag/v0.2.0
 [0.1.2]: https://github.com/your-username/wilrise/releases/tag/v0.1.2
 [0.1.1]: https://github.com/your-username/wilrise/releases/tag/v0.1.1

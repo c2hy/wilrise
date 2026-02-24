@@ -729,6 +729,9 @@ class Wilrise:
         if is_notification:
             await self._close_provider_generators(request)
             return None
+        # Normalize Pydantic models to JSON-serializable dicts when model_dump exists
+        if hasattr(result, "model_dump") and callable(result.model_dump):
+            result = result.model_dump(mode="json")
         # Ensure result is JSON-serializable; return -32603 on failure
         try:
             json.dumps(result)
