@@ -11,7 +11,6 @@ from wilrise.core import (
     Param,
     ParamsValidationError,
     Router,
-    Use,
     Wilrise,
 )
 from wilrise.errors import (
@@ -29,7 +28,7 @@ from wilrise.extensions import (
     RequestParser,
     ResponseBuilder,
 )
-from wilrise.params import RequestProvider
+from wilrise.params import RequestProvider, Use
 
 __all__ = [
     "AfterCallHook",

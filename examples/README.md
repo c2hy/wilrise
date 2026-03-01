@@ -5,44 +5,25 @@ Standalone example project showing how to use wilrise in a new project.
 
 ## Recommended reading order
 
-1. **minimal.py** — Get something running: one method + `app.run()`.
-2. **main.py** — Router, dependency injection (`Use`), and optional patterns (Param alias, explicit method name).
-3. **db/** — Minimal real DB: SQLite + SQLAlchemy, `get_user` / `list_users` / `create_user` RPC.
-4. **auth_crud/** — Full app: SQLAlchemy, JWT auth, CRUD; uses keyed params when methods have both Pydantic and `Use(...)`.
+The examples are numbered to build up concepts gradually:
 
-## Files
-
-- **minimal.py** — Minimal: single `add` method and run; good for first-time use.
-- **main.py** — Full: Router, `Param` description/alias, `Use` dependency injection, explicit method names.
-- **db/** — Real DB: SQLite + SQLAlchemy, generator-based `get_db_session`; RPC methods `get_user`, `list_users`, `create_user`.
-- **auth_crud/** — Auth + CRUD: SQLAlchemy (SQLite), JWT login, user CRUD.
+1. **01_minimal.py** — The absolute basics: one method + `app.run()`.
+2. **02_routing.py** — Grouping methods with `Router` and prefixes.
+3. **03_dependencies.py** — Dependency injection (`Use`) and generator cleanup.
+4. **04_parameters.py** — Advanced parameters (`Param` alias/default) and explicit RPC naming.
+5. **auth_crud/** — Full app: SQLAlchemy, JWT auth, CRUD; uses keyed params when methods have both Pydantic and `Use(...)`.
 
 ## Run
 
-**Recommended**: run from the `examples` directory. If you are at the repository root, use `uv run --project examples python examples/<script>` (e.g. `examples/minimal.py`).
+**Recommended**: run from the `examples` directory. If you are at the repository root, use `uv run --project examples python examples/<script>` (e.g. `examples/01_minimal.py`).
 
-**Minimal** (add only):
-
-```bash
-cd examples
-uv sync
-uv run python minimal.py
-```
-
-**Full** (math.add, get_user, getUser, get_user_by_alias, etc.):
+**Step-by-step examples**:
 
 ```bash
 cd examples
 uv sync
-uv run python main.py
-```
-
-**Real DB** (minimal SQLite + SQLAlchemy; `get_user`, `list_users`, `create_user`):
-
-```bash
-cd examples
-uv sync
-uv run python -m db.main
+uv run python 01_minimal.py
+# Try others: 02_routing.py, 03_dependencies.py, 04_parameters.py
 ```
 
 **Auth + CRUD** (login and user CRUD; run `uv sync` first to install sqlalchemy, pyjwt, bcrypt, etc.):
@@ -53,17 +34,7 @@ uv sync
 uv run python -m auth_crud.main
 ```
 
-**From repository root** (same effect):
-
-```bash
-uv run --project examples python examples/minimal.py
-# or
-uv run --project examples python examples/main.py
-# or
-uv run --project examples python -m auth_crud.main
-```
-
-Server is at `http://127.0.0.1:8000`. Example request:
+Server is at `http://127.0.0.1:8000`. Example request for `01_minimal.py`:
 
 ```bash
 curl -X POST http://127.0.0.1:8000 \
@@ -71,14 +42,7 @@ curl -X POST http://127.0.0.1:8000 \
   -d '{"jsonrpc":"2.0","method":"add","params":{"a":1,"b":2},"id":1}'
 ```
 
-## What main.py demonstrates
-
-- **Recommended default**: Method name = function name (e.g. `get_user` → RPC method `get_user`), plain parameters, Router + prefix for grouping.
-- **Router + prefix**: `math_router` mounted with prefix `math.` → `math.add`, `math.multiply`, etc.
-- **Use**: `db: DBSession = Use(get_db_session)` dependency injection (sync or async provider).
-- **Optional when needed**: `Param(alias="userId")` for client naming (e.g. camelCase); `@app.method("getUser")` to fix the RPC method name; `Param(description="...")` for docs.
-
-## Auth + CRUD example
+## Auth + CRUD example details
 
 - **Stack**: SQLAlchemy 2 + SQLite, JWT (PyJWT), bcrypt password hashing, Pydantic param validation.
 - **RPC methods**:
@@ -113,7 +77,7 @@ Database file defaults to `examples/auth_crud/auth_crud.db`; override with env v
 From the **repository root** (so the current wilrise is used):
 
 ```bash
-PYTHONPATH=examples uv run pytest examples/db/test_integration.py examples/auth_crud/test_integration.py -v
+PYTHONPATH=examples uv run pytest examples/test_basics.py examples/auth_crud/test_integration.py -v
 ```
 
 From the **examples** directory (after `uv sync`; installs pytest in examples dev deps):
@@ -121,10 +85,10 @@ From the **examples** directory (after `uv sync`; installs pytest in examples de
 ```bash
 cd examples
 uv sync
-uv run pytest db/test_integration.py auth_crud/test_integration.py -v
+uv run pytest test_basics.py auth_crud/test_integration.py -v
 ```
 
-These tests use temporary SQLite DBs and Starlette TestClient to assert create/get/list (and for auth_crud: login, auth.me, user CRUD).
+These tests use temporary SQLite DBs and Starlette TestClient to assert functionality.
 
 ### Concurrency and transaction safety test
 
@@ -134,8 +98,6 @@ These tests use temporary SQLite DBs and Starlette TestClient to assert create/g
 uv sync
 uv run python -m auth_crud.test_concurrent
 ```
-
-Passing the script means concurrent create/login/read/write/delete behave correctly with no cross-request pollution and proper connection-pool and session isolation.
 
 ## Other patterns (see main README and docs)
 

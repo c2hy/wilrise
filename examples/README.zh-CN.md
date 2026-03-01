@@ -5,37 +5,28 @@ For English, see [README.md](README.md).
 
 ## 建议阅读顺序
 
-1. **minimal.py** — 先跑起来：一个方法 + `app.run()`。
-2. **main.py** — Router、依赖注入（`Use`）及可选写法（Param 别名、显式方法名）。
-3. **auth_crud/** — 完整应用：SQLAlchemy、JWT 鉴权、CRUD；当方法同时有 Pydantic 与 `Use(...)` 时使用 keyed 传参。
+示例按数字编号，建议依次阅读以逐步掌握概念：
 
-## 文件说明
-
-- **minimal.py** — 最简示例：单个 `add` 方法并运行，适合首次使用。
-- **main.py** — 完整示例：Router、`Param` 描述/别名、`Use` 依赖注入、显式方法名。
-- **auth_crud/** — 登录与 CRUD：SQLAlchemy (SQLite)、JWT 登录、用户增删改查。
+1. **01_minimal.py** — 最简配置：单一方法 + `app.run()`。
+2. **02_routing.py** — 使用 `Router` 和前缀进行路由分组。
+3. **03_dependencies.py** — 使用 `Use` 进行依赖注入，包含生成器的自动清理机制。
+4. **04_parameters.py** — 参数高阶用法（`Param` 的别名与默认值）以及显式指定 RPC 方法名。
+5. **auth_crud/** — 完整应用：SQLAlchemy、JWT 鉴权、CRUD；演示 Pydantic 与 `Use(...)` 结合时的 keyed 传参模式。
 
 ## 运行方式
 
-**推荐**：在 `examples` 目录下执行。若在仓库根目录，请使用 `uv run --project examples python examples/<脚本>`（如 `examples/minimal.py`）。
+**推荐**：在 `examples` 目录下执行。若在仓库根目录，请使用 `uv run --project examples python examples/<脚本>`（如 `examples/01_minimal.py`）。
 
-**最简示例**（仅加法）：
-
-```bash
-cd examples
-uv sync
-uv run python minimal.py
-```
-
-**完整示例**（math.add、get_user、getUser、get_user_by_alias 等）：
+**逐步学习示例**：
 
 ```bash
 cd examples
 uv sync
-uv run python main.py
+uv run python 01_minimal.py
+# 同理运行: 02_routing.py, 03_dependencies.py, 04_parameters.py
 ```
 
-**Auth + CRUD**（登录与用户 CRUD；需先执行 `uv sync` 安装 sqlalchemy、pyjwt、bcrypt 等）：
+**Auth + CRUD**（登录与用户 CRUD；需先执行 `uv sync` 安装依赖）：
 
 ```bash
 cd examples
@@ -43,30 +34,13 @@ uv sync
 uv run python -m auth_crud.main
 ```
 
-**从仓库根目录运行**（效果相同）：
-
-```bash
-uv run --project examples python examples/minimal.py
-# 或
-uv run --project examples python examples/main.py
-# 或
-uv run --project examples python -m auth_crud.main
-```
-
-服务地址为 `http://127.0.0.1:8000`。示例请求：
+服务地址为 `http://127.0.0.1:8000`。请求 01 示例：
 
 ```bash
 curl -X POST http://127.0.0.1:8000 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"add","params":{"a":1,"b":2},"id":1}'
 ```
-
-## main.py 演示要点
-
-- **推荐默认**：方法名 = 函数名（如 `get_user` → RPC 方法 `get_user`）、普通参数、用 Router + prefix 分组。
-- **Router + 前缀**：`math_router` 挂载前缀 `math.` → `math.add`、`math.multiply` 等。
-- **Use**：`db: DBSession = Use(get_db_session)` 依赖注入（支持同步/异步提供者）。
-- **按需使用**：`Param(alias="userId")` 用于与前端命名一致（如 camelCase）；`@app.method("getUser")` 固定 RPC 方法名；`Param(description="...")` 用于文档。
 
 ## Auth + CRUD 示例说明
 
@@ -98,6 +72,18 @@ curl -s -X POST http://127.0.0.1:8000 -H "Content-Type: application/json" -H "Au
 
 数据库文件默认在 `examples/auth_crud/auth_crud.db`，可通过环境变量 `AUTH_CRUD_DB` 修改路径。本示例为便于排查使用 `debug=True`；生产环境请使用 `debug=False` 或 `from_env()`（见主 README 与 [docs/configuration.md](../docs/configuration.md)）。
 
+### 测试与验证 (pytest)
+
+在 `examples` 目录下（使用 `uv sync` 安装测试依赖）：
+
+```bash
+cd examples
+uv sync
+uv run pytest test_basics.py auth_crud/test_integration.py -v
+```
+
+这些测试通过 Starlette TestClient 和临时测试数据库覆盖了所有基本和高级示例的逻辑验证。
+
 ### 并发与事务安全测试
 
 `auth_crud/test_concurrent.py` 使用临时 SQLite 库和 httpx ASGI 传输，并发执行：创建 20 个用户、并行登录、并行列表/查询/更新/删除，并断言无事务或会话泄漏（每个请求独立 session，关闭时对未提交变更执行 rollback）。
@@ -106,8 +92,6 @@ curl -s -X POST http://127.0.0.1:8000 -H "Content-Type: application/json" -H "Au
 uv sync
 uv run python -m auth_crud.test_concurrent
 ```
-
-通过即表示：并发创建/登录/读/写/删均无交叉污染，连接池与 session 隔离正常。
 
 ## 其他用法（见主 README 与 docs）
 

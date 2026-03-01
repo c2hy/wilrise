@@ -75,12 +75,13 @@ async def login(client: httpx.AsyncClient, i: int) -> str:
 
 
 async def user_list(client: httpx.AsyncClient) -> list[Any]:
-    """Call user.list and return result list. Keyed params (params + Use)."""
+    """Call user.list and return result.users. Keyed params (params + Use)."""
     body = rpc_request("user.list", {"params": {"skip": 0, "limit": 100}})
     data = await post(client, body)
     if "error" in data:
         raise AssertionError(f"user.list error: {data}")
-    return data.get("result", [])
+    result = data.get("result", {})
+    return result.get("users", []) if isinstance(result, dict) else result
 
 
 async def user_get(
@@ -253,6 +254,15 @@ async def main() -> None:
         assert len(users) == 0, f"expected 0 users, got {len(users)}"
 
     print("All concurrency checks passed (no transaction/session leakage).")
+
+
+async def test_concurrent_crud() -> None:
+    """Pytest entry point: 20 concurrent users, no session/transaction leakage.
+
+    Exercises wilrise's async dispatch, generator-based Use() cleanup,
+    and SQLAlchemy session isolation under parallel load — all in one test.
+    """
+    await main()
 
 
 if __name__ == "__main__":

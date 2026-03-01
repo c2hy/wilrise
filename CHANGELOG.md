@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - None yet.
 
+## [0.3.0] - 2025-03-01
+
+### Changed
+
+- **Use 类型检查改进**：`Use` 由 dataclass 改为函数，返回类型声明为 `Any`，与 FastAPI 的 `Depends` 实现方式一致。当依赖参数位于可选参数之后时，`db: Session = Use(get_db)` 不再触发类型检查器报错，用户无需添加 `# type: ignore[assignment]`。
+
 ## [0.2.2] - 2025-03-01
 
 ### Added
@@ -62,7 +68,8 @@ First public release.
 - Optional `from_env()` helper to build `Wilrise` kwargs from `WILRISE_*` environment variables.
 - Documentation: production readiness (errors, configuration, observability, versioning, runbook, architecture).
 
-[Unreleased]: https://github.com/c2hy/wilrise/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/c2hy/wilrise/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/c2hy/wilrise/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/c2hy/wilrise/releases/tag/v0.2.2
 [0.2.1]: https://github.com/c2hy/wilrise/releases/tag/v0.2.1
 [0.2.0]: https://github.com/c2hy/wilrise/releases/tag/v0.2.0

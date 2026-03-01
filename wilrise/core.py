@@ -41,8 +41,8 @@ from wilrise.params import (
     Param,
     ParamsValidationError,
     PydanticValidationError,
-    Use,
     _effective_annotation,
+    _Use,
     _validate_param,
     get_param_meta,
 )
@@ -402,7 +402,7 @@ class Wilrise:
                     _, default, param_meta = sig[name]
                     if _key_present(name, param_meta):
                         resolved[i] = _get_value(name, param_meta)
-                    elif isinstance(default, Use):
+                    elif isinstance(default, _Use):
                         key = id(default.provider)
                         if key in dep_cache:
                             resolved[i] = dep_cache[key]
@@ -455,7 +455,7 @@ class Wilrise:
             _, default, param_meta = sig[name]
             if _key_present(name, param_meta):
                 resolved[i] = _get_value(name, param_meta)
-            elif isinstance(default, Use):
+            elif isinstance(default, _Use):
                 key = id(default.provider)
                 if key in dep_cache:
                     resolved[i] = dep_cache[key]

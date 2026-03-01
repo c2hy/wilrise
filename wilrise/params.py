@@ -95,7 +95,7 @@ def get_param_meta(
                     )
                 if meta.default is not ... and default is ...:
                     default = meta.default
-            elif isinstance(a, Use):
+            elif isinstance(a, _Use):
                 # Use in Annotated: DI without default value (type-checker friendly)
                 if default is ...:
                     default = a
@@ -134,13 +134,19 @@ def _validate_param(
 
 
 @dataclass
-class Use:
-    """Dependency injection. Provider receives Request only; do not use for RPC params.
-
-    Supports sync and async providers.
-    """
+class _Use:
+    """Internal: dependency injection marker. Use the Use() function instead."""
 
     provider: RequestProvider
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.provider(*args, **kwargs)
+
+
+def Use(provider: RequestProvider) -> Any:
+    """Dependency injection. Provider receives Request only; do not use for RPC params.
+
+    Supports sync and async providers. Returns Any for type-checker compatibility
+    when used as default value (e.g. db: Session = Use(get_db)).
+    """
+    return _Use(provider)
