@@ -26,6 +26,13 @@ wilrise 采用 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)（MAJOR.M
 
 在发布新 MAJOR 或重要 MINOR 时，会在 `docs/` 下提供升级说明（如 `docs/upgrade-1.0.md`），包括：从 x.y 升级到 x'.y' 的步骤、配置变更、废弃 API 的替换方式，以减少升级成本。
 
+## 发布流程
+
+1. 在 `develop` 上更新 `pyproject.toml` 的 `version` 与 [CHANGELOG.md](../CHANGELOG.md)，提交并推送。
+2. 将 `develop` 合并到 `main`（本地或按仓库约定均可），推送 `main`。
+3. 在 `main` 上打 tag（如 `v0.3.0`）并推送：`git tag v0.3.0 && git push origin v0.3.0`。
+4. 推送 `v*` tag 会触发 GitHub Actions 的 “Publish to PyPI” 工作流；工作流要求 tag 指向的提交必须在 `main` 上。
+
 ## 测试与兼容性
 
 - CI 保留对当前支持的最低 Python 版本（见 `pyproject.toml` 中 `requires-python`）的测试。
