@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - None yet.
 
+## [0.2.2] - 2025-03-01
+
+### Added
+
+- `Use` in `Annotated`: dependency injection via `Annotated[Session, Use(get_db_session)]` without default value. Type checkers (Pyright/Pylance) infer the parameter type correctly; usage aligns with FastAPI's `Annotated[Type, Depends(dep)]` pattern.
+
 ## [0.2.1] - 2025-02-24
 
 ### Fixed
@@ -56,9 +62,10 @@ First public release.
 - Optional `from_env()` helper to build `Wilrise` kwargs from `WILRISE_*` environment variables.
 - Documentation: production readiness (errors, configuration, observability, versioning, runbook, architecture).
 
-[Unreleased]: https://github.com/your-username/wilrise/compare/v0.2.1...HEAD
-[0.2.1]: https://github.com/your-username/wilrise/releases/tag/v0.2.1
-[0.2.0]: https://github.com/your-username/wilrise/releases/tag/v0.2.0
-[0.1.2]: https://github.com/your-username/wilrise/releases/tag/v0.1.2
-[0.1.1]: https://github.com/your-username/wilrise/releases/tag/v0.1.1
-[0.1.0]: https://github.com/your-username/wilrise/releases/tag/v0.1.0
+[Unreleased]: https://github.com/c2hy/wilrise/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/c2hy/wilrise/releases/tag/v0.2.2
+[0.2.1]: https://github.com/c2hy/wilrise/releases/tag/v0.2.1
+[0.2.0]: https://github.com/c2hy/wilrise/releases/tag/v0.2.0
+[0.1.2]: https://github.com/c2hy/wilrise/releases/tag/v0.1.2
+[0.1.1]: https://github.com/c2hy/wilrise/releases/tag/v0.1.1
+[0.1.0]: https://github.com/c2hy/wilrise/releases/tag/v0.1.0

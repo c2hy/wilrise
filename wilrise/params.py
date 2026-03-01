@@ -77,7 +77,7 @@ def get_param_meta(
     if isinstance(default, Param):
         meta = default
         default = meta.default if meta.default is not ... else ...
-    # Annotation is Annotated[T, Param(...), ...]
+    # Annotation is Annotated[T, Param(...) | Use(...), ...]
     annotation = param.annotation
     if get_origin(annotation) is Annotated:
         args = get_args(annotation)
@@ -95,7 +95,10 @@ def get_param_meta(
                     )
                 if meta.default is not ... and default is ...:
                     default = meta.default
-                break
+            elif isinstance(a, Use):
+                # Use in Annotated: DI without default value (type-checker friendly)
+                if default is ...:
+                    default = a
 
     return default, meta
 

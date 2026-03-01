@@ -140,6 +140,20 @@ class TestGetParamMeta:
         assert meta.default == 3
         assert meta.description in ("from Annotated", "from default")
 
+    def test_annotated_use_no_default(self) -> None:
+        """Use in Annotated: DI without default value, type-checker friendly."""
+
+        def provide(request: Request) -> str:
+            return ""
+
+        def fn(db: Annotated[str, Use(provide)]) -> None:
+            pass
+
+        default, meta = get_param_meta(fn, "db")
+        assert isinstance(default, Use)
+        assert default.provider is provide
+        assert meta is None
+
 
 # ---------------------------------------------------------------------------
 # Router and Wilrise.method / include_router
@@ -317,6 +331,20 @@ class TestResolveParams:
 
         args = await app.resolve_method_params("f", {}, _fake_request())
         assert args == [99]
+
+    async def test_use_in_annotated_no_default(self) -> None:
+        """Annotated[T, Use(provider)]: DI without default, type-checker friendly."""
+        app = Wilrise()
+
+        def provide(request: Request) -> str:
+            return "injected-via-annotated"
+
+        @app.method
+        def f(tag: Annotated[str, Use(provide)]) -> str:
+            return tag
+
+        args = await app.resolve_method_params("f", {}, _fake_request())
+        assert args == ["injected-via-annotated"]
 
     async def test_param_alias_takes_value(self) -> None:
         app = Wilrise()
