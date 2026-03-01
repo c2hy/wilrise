@@ -269,33 +269,25 @@ class Wilrise:
         fn = self._methods[method_name]
         return await self._resolve_params(fn, params, request)
 
-    def _get_sig(
-        self, fn: Callable[..., Any]
-    ) -> dict[str, tuple[int, Any, Param | None]]:
+    def _get_sig(self, fn: Callable[..., Any]) -> dict[str, tuple[int, Any, Param | None]]:
         sig = inspect.signature(fn)
         result: dict[str, tuple[int, Any, Param | None]] = {}
         for i, (name, param) in enumerate(sig.parameters.items()):
             default, param_meta = get_param_meta(param)
             # Keep non-Param defaults such as Use(get_db_session)
-            if param.default is not inspect.Parameter.empty and not isinstance(
-                param.default, Param
-            ):
+            if param.default is not inspect.Parameter.empty and not isinstance(param.default, Param):
                 default = param.default
             result[name] = (i, default, param_meta)
         return result
 
-    async def _unwrap_provider_result(
-        self, dep: Any, request: Request
-    ) -> tuple[Any, bool]:
+    async def _unwrap_provider_result(self, dep: Any, request: Request) -> tuple[Any, bool]:
         """If provider returned a generator/async generator: take first yield as
         value, register gen for cleanup after RPC; return (value, True).
         Otherwise return (dep, False).
         """
         if inspect.isgenerator(dep):
             first = next(dep)
-            cleanup: list[Any] | None = getattr(
-                request.state, "_wilrise_gen_cleanup", None
-            )
+            cleanup: list[Any] | None = getattr(request.state, "_wilrise_gen_cleanup", None)
             if cleanup is None:
                 cleanup = []
                 request.state._wilrise_gen_cleanup = cleanup
@@ -303,9 +295,7 @@ class Wilrise:
             return (first, True)
         if inspect.isasyncgen(dep):
             first = await dep.__anext__()
-            cleanup_list: list[Any] | None = getattr(
-                request.state, "_wilrise_gen_cleanup", None
-            )
+            cleanup_list: list[Any] | None = getattr(request.state, "_wilrise_gen_cleanup", None)
             if cleanup_list is None:
                 cleanup_list = []
                 request.state._wilrise_gen_cleanup = cleanup_list
@@ -347,9 +337,7 @@ class Wilrise:
         param_names = list(sig.keys())
         # Normalize to dict for handling
         if isinstance(params, list):
-            rpc_params = {
-                param_names[i]: v for i, v in enumerate(params) if i < len(param_names)
-            }
+            rpc_params = {param_names[i]: v for i, v in enumerate(params) if i < len(param_names)}
         elif isinstance(params, dict):
             rpc_params = params or {}
         else:
@@ -370,11 +358,7 @@ class Wilrise:
 
         # First param is BaseModel and its key is absent: use entire rpc_params
         # for that param, then resolve the rest by key/Use/default.
-        if (
-            param_names
-            and BaseModel is not None
-            and PydanticValidationError is not None
-        ):
+        if param_names and BaseModel is not None and PydanticValidationError is not None:
             first_name = param_names[0]
             _, _first_default, first_meta = sig[first_name]
             first_param = fn_sig.parameters[first_name]
@@ -389,9 +373,7 @@ class Wilrise:
                         rpc_params
                     )
                 except PydanticValidationError as e:
-                    raise ParamsValidationError(
-                        cast(list[dict[str, Any]], e.errors())
-                    ) from e
+                    raise ParamsValidationError(cast(list[dict[str, Any]], e.errors())) from e
                 dep_cache = getattr(request.state, "_wilrise_dep_cache", {})
                 resolved = cast(
                     list[Any],
@@ -410,9 +392,7 @@ class Wilrise:
                             dep = default(request)
                             if asyncio.iscoroutine(dep):
                                 dep = await dep
-                            dep, is_gen = await self._unwrap_provider_result(
-                                dep, request
-                            )
+                            dep, is_gen = await self._unwrap_provider_result(dep, request)
                             if not is_gen:
                                 dep_cache[key] = dep
                             resolved[i] = dep
@@ -422,16 +402,10 @@ class Wilrise:
                         raise ValueError(f"Missing required argument: {name}")
                 for i in range(1, len(param_names)):
                     param = fn_sig.parameters[param_names[i]]
-                    resolved[i] = _validate_param(
-                        param.annotation, resolved[i], param_names[i]
-                    )
+                    resolved[i] = _validate_param(param.annotation, resolved[i], param_names[i])
                 return resolved
 
-        if (
-            len(param_names) == 1
-            and BaseModel is not None
-            and PydanticValidationError is not None
-        ):
+        if len(param_names) == 1 and BaseModel is not None and PydanticValidationError is not None:
             only_name = param_names[0]
             _, default, param_meta = sig[only_name]
             only_param = fn_sig.parameters[only_name]
@@ -444,9 +418,7 @@ class Wilrise:
                 try:
                     instance = effective.model_validate(raw)  # type: ignore[union-attr]
                 except PydanticValidationError as e:
-                    raise ParamsValidationError(
-                        cast(list[dict[str, Any]], e.errors())
-                    ) from e
+                    raise ParamsValidationError(cast(list[dict[str, Any]], e.errors())) from e
                 return [instance]
 
         dep_cache: dict[int, Any] = getattr(request.state, "_wilrise_dep_cache", {})
@@ -564,9 +536,7 @@ class Wilrise:
             if asyncio.iscoroutine(out):
                 await out
 
-    async def _process_single(
-        self, body: dict[str, Any], request: Request
-    ) -> dict[str, Any] | None:
+    async def _process_single(self, body: dict[str, Any], request: Request) -> dict[str, Any] | None:
         """Process one Request object.
 
         Returns response dict or None for notification.
@@ -632,9 +602,7 @@ class Wilrise:
         except ValueError as e:
             # Unify -32602 data: same shape as Pydantic errors for client handling
             msg = str(e)
-            validation_errors: list[dict[str, Any]] = [
-                {"loc": [], "msg": msg, "type": "value_error"}
-            ]
+            validation_errors: list[dict[str, Any]] = [{"loc": [], "msg": msg, "type": "value_error"}]
             if "Missing required argument:" in msg:
                 arg_name = msg.replace("Missing required argument:", "").strip()
                 validation_errors = [{"loc": [arg_name], "msg": msg, "type": "missing"}]
@@ -673,9 +641,7 @@ class Wilrise:
                     exc_info=True,
                 )
             _err_msg = str(e) if self._debug else "Internal error"
-            _err_data: dict[str, Any] | None = (
-                {"type": type(e).__name__} if self._debug else None
-            )
+            _err_data: dict[str, Any] | None = {"type": type(e).__name__} if self._debug else None
             if _err_data is not None and BaseModel is None:
                 _err_data["hint"] = "Install wilrise[pydantic] for parameter validation"
             if _err_data is None:
@@ -746,9 +712,7 @@ class Wilrise:
                     },
                 )
             ser_msg = str(e) if self._debug else "Result is not JSON-serializable"
-            ser_data: dict[str, Any] | None = (
-                {"type": type(e).__name__} if self._debug else None
-            )
+            ser_data: dict[str, Any] | None = {"type": type(e).__name__} if self._debug else None
             if ser_data is None:
                 ser_data = {"request_id": context.http_request_id}
             await self._close_provider_generators(request)
@@ -790,9 +754,7 @@ class Wilrise:
         if request.method != "POST":
             invalid_body = self._invalid_request(None)
             r = JSONResponse(invalid_body, status_code=405)
-            await self._log_request_complete(
-                top_context, start_time, r, response_payload=invalid_body
-            )
+            await self._log_request_complete(top_context, start_time, r, response_payload=invalid_body)
             self._schedule_background_tasks(request)
             return r
 
@@ -812,13 +774,9 @@ class Wilrise:
                             "max_request_size": self._max_request_size,
                         },
                     )
-                body_too_large = self._error(
-                    INVALID_REQUEST, "Request body too large", None
-                )
+                body_too_large = self._error(INVALID_REQUEST, "Request body too large", None)
                 r = JSONResponse(body_too_large, status_code=413)
-                await self._log_request_complete(
-                    top_context, start_time, r, response_payload=body_too_large
-                )
+                await self._log_request_complete(top_context, start_time, r, response_payload=body_too_large)
                 self._schedule_background_tasks(request)
                 return r
 
@@ -831,9 +789,7 @@ class Wilrise:
                 "id": None,
             }
             r = JSONResponse(parse_error_body, status_code=400)
-            await self._log_request_complete(
-                top_context, start_time, r, response_payload=parse_error_body
-            )
+            await self._log_request_complete(top_context, start_time, r, response_payload=parse_error_body)
             self._schedule_background_tasks(request)
             return r
 
@@ -858,17 +814,13 @@ class Wilrise:
                     },
                 )
                 r = JSONResponse(batch_size_body, status_code=400)
-                await self._log_request_complete(
-                    top_context, start_time, r, response_payload=batch_size_body
-                )
+                await self._log_request_complete(top_context, start_time, r, response_payload=batch_size_body)
                 self._schedule_background_tasks(request)
                 return r
             if len(batch) == 0:
                 empty_batch_body = self._invalid_request(None)
                 r = JSONResponse(empty_batch_body, status_code=400)
-                await self._log_request_complete(
-                    top_context, start_time, r, response_payload=empty_batch_body
-                )
+                await self._log_request_complete(top_context, start_time, r, response_payload=empty_batch_body)
                 self._schedule_background_tasks(request)
                 return r
             responses: list[dict[str, Any]] = []
@@ -881,14 +833,10 @@ class Wilrise:
                         responses.append(resp)
             if len(responses) == 0:
                 r = Response(status_code=204)
-                await self._log_request_complete(
-                    top_context, start_time, r, response_payload=None
-                )
+                await self._log_request_complete(top_context, start_time, r, response_payload=None)
             else:
                 r = JSONResponse(responses, status_code=200)
-                await self._log_request_complete(
-                    top_context, start_time, r, response_payload=responses
-                )
+                await self._log_request_complete(top_context, start_time, r, response_payload=responses)
             self._schedule_background_tasks(request)
             return r
 
@@ -897,22 +845,16 @@ class Wilrise:
             resp = await self._process_single(single_body, request)
             if resp is None:
                 r = Response(status_code=204)
-                await self._log_request_complete(
-                    top_context, start_time, r, response_payload=None
-                )
+                await self._log_request_complete(top_context, start_time, r, response_payload=None)
             else:
                 r = JSONResponse(resp, status_code=200)
-                await self._log_request_complete(
-                    top_context, start_time, r, response_payload=resp
-                )
+                await self._log_request_complete(top_context, start_time, r, response_payload=resp)
             self._schedule_background_tasks(request)
             return r
 
         invalid_body_final = self._invalid_request(None)
         r = JSONResponse(invalid_body_final, status_code=400)
-        await self._log_request_complete(
-            top_context, start_time, r, response_payload=invalid_body_final
-        )
+        await self._log_request_complete(top_context, start_time, r, response_payload=invalid_body_final)
         self._schedule_background_tasks(request)
         return r
 
@@ -927,9 +869,7 @@ class Wilrise:
             return await self._handle_request(request)
 
         route = Route(path, endpoint=jsonrpc_endpoint, methods=["POST"])
-        middleware_list = [
-            Middleware(cls, **kwargs) for cls, kwargs in self._middleware
-        ]
+        middleware_list = [Middleware(cls, **kwargs) for cls, kwargs in self._middleware]
         lifespan = None
         if self._startup or self._shutdown:
 

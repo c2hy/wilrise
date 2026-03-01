@@ -10,7 +10,6 @@ FastAPI mapping:
   500 Internal server → -32603 Internal error
   debug mode          → expose exception text in error.message
 """
-# pyright: reportUnusedFunction=false
 
 import asyncio
 from typing import Any
@@ -51,7 +50,7 @@ class TestMethodRegistration:
         app = Wilrise()
 
         @app.method
-        def echo(value: str) -> str:
+        def echo(value: str) -> str:  # pyright: ignore[reportUnusedFunction]
             return value
 
         client = _client(app)
@@ -64,7 +63,7 @@ class TestMethodRegistration:
         app = Wilrise()
 
         @app.method("user.getById")
-        def get_user_by_id(user_id: int) -> dict[str, Any]:
+        def get_user_by_id(user_id: int) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             return {"id": user_id}
 
         client = _client(app)
@@ -77,7 +76,7 @@ class TestMethodRegistration:
         app = Wilrise()
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         client = _client(app)
@@ -90,7 +89,7 @@ class TestMethodRegistration:
         app = Wilrise()
 
         @app.method
-        def noop() -> None:
+        def noop() -> None:  # pyright: ignore[reportUnusedFunction]
             return None
 
         client = _client(app)
@@ -104,7 +103,7 @@ class TestMethodRegistration:
         app = Wilrise()
 
         @app.method
-        def items() -> list[int]:
+        def items() -> list[int]:  # pyright: ignore[reportUnusedFunction]
             return [1, 2, 3]
 
         client = _client(app)
@@ -123,7 +122,7 @@ class TestSyncAsync:
         app = Wilrise()
 
         @app.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         client = _client(app)
@@ -135,7 +134,7 @@ class TestSyncAsync:
         app = Wilrise()
 
         @app.method
-        async def async_add(a: int, b: int) -> int:
+        async def async_add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             await asyncio.sleep(0)
             return a + b
 
@@ -154,7 +153,7 @@ class TestResponseId:
         app = Wilrise()
 
         @app.method
-        def greet() -> str:
+        def greet() -> str:  # pyright: ignore[reportUnusedFunction]
             return "hello"
 
         client = _client(app)
@@ -167,7 +166,7 @@ class TestResponseId:
         app = Wilrise()
 
         @app.method
-        def greet() -> str:
+        def greet() -> str:  # pyright: ignore[reportUnusedFunction]
             return "hello"
 
         client = _client(app)
@@ -236,7 +235,7 @@ class TestErrorCodes:
         app = Wilrise()
 
         @app.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         client = _client(app)
@@ -251,7 +250,7 @@ class TestErrorCodes:
         app = Wilrise()
 
         @app.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         client = _client(app)
@@ -264,7 +263,7 @@ class TestErrorCodes:
         app = Wilrise()
 
         @app.method
-        def boom() -> None:
+        def boom() -> None:  # pyright: ignore[reportUnusedFunction]
             raise RuntimeError("unexpected")
 
         client = _client(app)
@@ -276,7 +275,7 @@ class TestErrorCodes:
         app = Wilrise()
 
         @app.method
-        def bad_result() -> object:
+        def bad_result() -> object:  # pyright: ignore[reportUnusedFunction]
             return object()  # not serializable
 
         client = _client(app)
@@ -295,7 +294,7 @@ class TestDebugMode:
         app = Wilrise(debug=True)
 
         @app.method
-        def fail() -> None:
+        def fail() -> None:  # pyright: ignore[reportUnusedFunction]
             raise ValueError("secret error detail")
 
         client = _client(app)
@@ -309,7 +308,7 @@ class TestDebugMode:
         app = Wilrise(debug=False)
 
         @app.method
-        def fail() -> None:
+        def fail() -> None:  # pyright: ignore[reportUnusedFunction]
             raise ValueError("secret error detail")
 
         client = _client(app)
@@ -330,7 +329,7 @@ class TestBatch:
         app = Wilrise()
 
         @app.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         client = _client(app)
@@ -352,7 +351,7 @@ class TestBatch:
         app = Wilrise()
 
         @app.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         client = _client(app)
@@ -372,7 +371,7 @@ class TestBatch:
         app = Wilrise()
 
         @app.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         client = _client(app)
@@ -399,7 +398,7 @@ class TestBatch:
         app = Wilrise(max_batch_size=2)
 
         @app.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         client = _client(app)
@@ -421,7 +420,7 @@ class TestNotification:
         called = []
 
         @app.method
-        def notify(msg: str) -> None:
+        def notify(msg: str) -> None:  # pyright: ignore[reportUnusedFunction]
             called.append(msg)
 
         client = _client(app)
@@ -454,7 +453,7 @@ class TestArrayParams:
         app = Wilrise()
 
         @app.method
-        def subtract(x: int, y: int) -> int:
+        def subtract(x: int, y: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return x - y
 
         client = _client(app)
@@ -465,7 +464,7 @@ class TestArrayParams:
         app = Wilrise()
 
         @app.method
-        def double(n: int) -> int:
+        def double(n: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return n * 2
 
         client = _client(app)
@@ -507,7 +506,7 @@ class TestCustomPath:
         app = Wilrise()
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         client = _client(app, path="/rpc")

@@ -7,7 +7,7 @@ FastAPI mapping:
   Annotated[T, Use(...)]    → DI without clobbering the default (type-checker friendly)
   resolve_method_params()   → test-helper API analogous to FastAPI's dependency testing
 """
-# pyright: reportArgumentType=false, reportUnusedFunction=false
+# pyright: reportArgumentType=false
 
 from typing import Any
 
@@ -48,7 +48,7 @@ class TestParamDefault:
         app = Wilrise()
 
         @app.method
-        def greet(name: str = Param("World")) -> str:
+        def greet(name: str = Param("World")) -> str:  # pyright: ignore[reportUnusedFunction]
             return f"Hello, {name}!"
 
         client = _client(app)
@@ -60,7 +60,7 @@ class TestParamDefault:
         app = Wilrise()
 
         @app.method
-        def greet(name: str = Param("World")) -> str:
+        def greet(name: str = Param("World")) -> str:  # pyright: ignore[reportUnusedFunction]
             return f"Hello, {name}!"
 
         client = _client(app)
@@ -72,7 +72,7 @@ class TestParamDefault:
         app = Wilrise()
 
         @app.method
-        def counter(start: int = Param(0)) -> int:
+        def counter(start: int = Param(0)) -> int:  # pyright: ignore[reportUnusedFunction]
             return start
 
         client = _client(app)
@@ -91,7 +91,7 @@ class TestParamAlias:
         app = Wilrise()
 
         @app.method
-        def get_user(user_id: int = Param(alias="userId")) -> dict[str, Any]:
+        def get_user(user_id: int = Param(alias="userId")) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             return {"id": user_id}
 
         client = _client(app)
@@ -103,7 +103,7 @@ class TestParamAlias:
         app = Wilrise()
 
         @app.method
-        def get_user(user_id: int = Param(alias="userId")) -> dict[str, Any]:
+        def get_user(user_id: int = Param(alias="userId")) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             return {"id": user_id}
 
         client = _client(app)
@@ -116,7 +116,7 @@ class TestParamAlias:
         app = Wilrise()
 
         @app.method
-        def get_user(user_id: int = Param(alias="userId")) -> dict[str, Any]:
+        def get_user(user_id: int = Param(alias="userId")) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             return {"id": user_id}
 
         client = _client(app)
@@ -129,7 +129,7 @@ class TestParamAlias:
         app = Wilrise()
 
         @app.method
-        def get_user(user_id: int = Param(alias="userId")) -> dict[str, Any]:
+        def get_user(user_id: int = Param(alias="userId")) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             return {"id": user_id}
 
         client = _client(app)
@@ -142,7 +142,7 @@ class TestParamAlias:
         app = Wilrise()
 
         @app.method
-        def label(item_name: str = Param("item", alias="itemName")) -> str:
+        def label(item_name: str = Param("item", alias="itemName")) -> str:  # pyright: ignore[reportUnusedFunction]
             return item_name
 
         client = _client(app)
@@ -174,7 +174,7 @@ class TestParamDescription:
         app = Wilrise()
 
         @app.method
-        def compute(x: int = Param(10, description="The x value")) -> int:
+        def compute(x: int = Param(10, description="The x value")) -> int:  # pyright: ignore[reportUnusedFunction]
             return x * 2
 
         client = _client(app)
@@ -195,7 +195,7 @@ class TestAnnotatedParam:
         app = Wilrise()
 
         @app.method
-        def get_user(user_id: Annotated[int, Param(alias="userId")]) -> int:
+        def get_user(user_id: Annotated[int, Param(alias="userId")]) -> int:  # pyright: ignore[reportUnusedFunction]
             return user_id
 
         client = _client(app)
@@ -229,7 +229,7 @@ class TestAnnotatedUse:
             return "tok123"
 
         @app.method
-        def protected(token: Annotated[str, Use(get_token)]) -> str:
+        def protected(token: Annotated[str, Use(get_token)]) -> str:  # pyright: ignore[reportUnusedFunction]
             return token
 
         client = _client(app)
@@ -245,12 +245,55 @@ class TestAnnotatedUse:
             return 42
 
         @app.method
-        async def fetch(val: Annotated[int, Use(get_async_value)]) -> int:
+        async def fetch(val: Annotated[int, Use(get_async_value)]) -> int:  # pyright: ignore[reportUnusedFunction]
             return val
 
         client = _client(app)
         r = client.post("/", json=_rpc("fetch"))
         assert r.json()["result"] == 42
+
+
+# ---------------------------------------------------------------------------
+# Zero-arg provider (RequestProvider accepts Callable[..., T])
+# ---------------------------------------------------------------------------
+
+
+class TestZeroArgProvider:
+    """Use() with 0-arg provider (e.g. get_db() -> Session). Type regression: RequestProvider
+    allows Callable[..., T]; without this, pyright would reject Use(zero_arg_provider).
+    """
+
+    def test_zero_arg_provider_default_style(self) -> None:
+        """db: str = Use(get_db) with get_db() -> str works at runtime and type-check."""
+        app = Wilrise()
+
+        def get_db() -> str:
+            return "db_no_request"
+
+        @app.method
+        def query(table: str, db: str = Use(get_db)) -> str:  # pyright: ignore[reportUnusedFunction]
+            return f"{db}:{table}"
+
+        client = _client(app)
+        r = client.post("/", json=_rpc("query", {"table": "users"}))
+        assert r.json()["result"] == "db_no_request:users"
+
+    def test_zero_arg_provider_annotated_style(self) -> None:
+        """Annotated[str, Use(get_db)] with 0-arg get_db works; param type remains str."""
+        from typing import Annotated
+
+        app = Wilrise()
+
+        def get_db() -> str:
+            return "injected"
+
+        @app.method
+        def read(key: str, db: Annotated[str, Use(get_db)]) -> str:  # pyright: ignore[reportUnusedFunction]
+            return f"{key}={db}"
+
+        client = _client(app)
+        r = client.post("/", json=_rpc("read", {"key": "x"}))
+        assert r.json()["result"] == "x=injected"
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +310,7 @@ class TestResolveMethodParams:
         app = Wilrise()
 
         @app.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         asgi = app.as_asgi()
@@ -322,7 +365,7 @@ class TestMixedParams:
             return "db_conn"
 
         @app.method
-        def query(table: str, db: str = Use(get_db)) -> str:
+        def query(table: str, db: str = Use(get_db)) -> str:  # pyright: ignore[reportUnusedFunction]
             return f"{db}:{table}"
 
         client = _client(app)
@@ -340,7 +383,7 @@ class TestMixedParams:
         app = Wilrise()
 
         @app.method
-        def double_dep(
+        def double_dep(  # pyright: ignore[reportUnusedFunction]
             a: str = Use(count_calls), b: str = Use(count_calls)
         ) -> list[str]:
             return [a, b]

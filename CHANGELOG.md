@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - None yet.
 
+## [0.3.1] - 2025-03-01
+
+### Fixed
+
+- **Use / RequestProvider 类型**：`RequestProvider` 放宽为 `Callable[..., Any | Awaitable[Any]]`，`Use(provider)` 接受 `Callable[..., T | Awaitable[T]]`，无参 provider（如 `def get_db() -> Generator[Session]`）不再被类型检查器报错；与 `Annotated[Session, Use(get_db)]` 搭配时参数类型推断正确。
+- **0 参 provider 运行时**：框架按 `inspect.signature` 判断参数个数，0 参时调用 `provider()`，否则传入 `request`，无参 `get_db()` 等依赖可正常使用。
+
+### Changed
+
+- **测试**：移除各测试文件的全局 `# pyright: reportUnusedFunction=false`，仅在需抑制的 RPC 方法 def 上使用 `# pyright: ignore[reportUnusedFunction]`。0 参 provider 用例并入 `test_params.TestZeroArgProvider`，删除 `test_use_zero_arg_typecheck.py`。
+
 ## [0.3.0] - 2025-03-01
 
 ### Changed
@@ -68,7 +79,8 @@ First public release.
 - Optional `from_env()` helper to build `Wilrise` kwargs from `WILRISE_*` environment variables.
 - Documentation: production readiness (errors, configuration, observability, versioning, runbook, architecture).
 
-[Unreleased]: https://github.com/c2hy/wilrise/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/c2hy/wilrise/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/c2hy/wilrise/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/c2hy/wilrise/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/c2hy/wilrise/releases/tag/v0.2.2
 [0.2.1]: https://github.com/c2hy/wilrise/releases/tag/v0.2.1

@@ -32,9 +32,7 @@ class RpcError(Exception):
         data: Any = None,
     ) -> None:
         if not (-32099 <= code <= -32000):
-            raise ValueError(
-                f"Application error code must be in -32099..-32000, got {code}"
-            )
+            raise ValueError(f"Application error code must be in -32099..-32000, got {code}")
         self.code = code
         self.message = message
         self.data = data

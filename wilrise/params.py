@@ -1,16 +1,15 @@
 """Parameter metadata, validation, and dependency injection for JSON-RPC methods."""
 
-# pyright: reportUnusedFunction=false
-
 import inspect
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Annotated, Any, cast, get_args, get_origin
+from typing import Annotated, Any, TypeVar, cast, get_args, get_origin
 
-from starlette.requests import Request
+# Provider may take 0 args or (Request,); return value is injected into the method parameter.
+# Callable[..., ...] allows both () -> T and (Request) -> T for frameworks that pass request.
+RequestProvider = Callable[..., Any | Awaitable[Any]]
 
-# Provider receives Request only; return value is injected into the method parameter.
-RequestProvider = Callable[[Request], Any | Awaitable[Any]]
+T = TypeVar("T")
 
 _BaseModel: type[Any] | None = None
 _PydanticValidationError: type[Exception] | None = None
@@ -57,10 +56,7 @@ class Param:
     def __repr__(self) -> str:
         if self.default is ...:
             return f"Param(description={self.description!r}, alias={self.alias!r})"
-        return (
-            f"Param(default={self.default!r}, description={self.description!r}, "
-            f"alias={self.alias!r})"
-        )
+        return f"Param(default={self.default!r}, description={self.description!r}, alias={self.alias!r})"
 
 
 def get_param_meta(
@@ -111,6 +107,8 @@ def _effective_annotation(annotation: Any) -> Any:
     return annotation
 
 
+# Used by core.py; pyright reports unused within this file.
+# pyright: reportUnusedFunction=false
 def _validate_param(
     annotation: Any,
     value: Any,
@@ -133,6 +131,14 @@ def _validate_param(
         raise ParamsValidationError(cast(list[dict[str, Any]], e.errors())) from e
 
 
+def _provider_arity(provider: RequestProvider) -> int:
+    """Number of parameters the provider accepts (0 or 1 for Request)."""
+    try:
+        return len(inspect.signature(provider).parameters)
+    except (ValueError, TypeError):
+        return 1  # e.g. C extension; assume (request,)
+
+
 @dataclass
 class _Use:
     """Internal: dependency injection marker. Use the Use() function instead."""
@@ -140,13 +146,15 @@ class _Use:
     provider: RequestProvider
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        if _provider_arity(self.provider) == 0:
+            return self.provider()
         return self.provider(*args, **kwargs)
 
 
-def Use(provider: RequestProvider) -> Any:
-    """Dependency injection. Provider receives Request only; do not use for RPC params.
+def Use(provider: Callable[..., T | Awaitable[T]]) -> Any:
+    """Dependency injection. Provider may take 0 args or (Request,); do not use for RPC params.
 
-    Supports sync and async providers. Returns Any for type-checker compatibility
-    when used as default value (e.g. db: Session = Use(get_db)).
+    Supports sync and async providers. Use Annotated[YourType, Use(provider)] so
+    the parameter is typed as YourType (provider may return Generator[YourType] etc.).
     """
     return _Use(provider)

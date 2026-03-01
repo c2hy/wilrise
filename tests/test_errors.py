@@ -6,7 +6,6 @@ FastAPI mapping:
   HTTPException(422)       → -32602 Invalid params
   HTTPException(404)       → RpcError(-32099, "Not found", ...)
 """
-# pyright: reportUnusedFunction=false
 
 from typing import Any
 
@@ -46,7 +45,7 @@ class TestRpcError:
         app = Wilrise()
 
         @app.method
-        def login(token: str) -> str:
+        def login(token: str) -> str:  # pyright: ignore[reportUnusedFunction]
             if token != "valid":
                 raise RpcError(-32001, "Authentication failed")
             return "ok"
@@ -62,7 +61,7 @@ class TestRpcError:
         app = Wilrise()
 
         @app.method
-        def get_item(item_id: int) -> dict[str, Any]:
+        def get_item(item_id: int) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             raise RpcError(-32002, "Item not found", data={"item_id": item_id})
 
         client = _client(app)
@@ -76,7 +75,7 @@ class TestRpcError:
         app = Wilrise()
 
         @app.method
-        async def async_fail() -> None:
+        async def async_fail() -> None:  # pyright: ignore[reportUnusedFunction]
             raise RpcError(-32003, "Async error")
 
         client = _client(app)
@@ -99,7 +98,7 @@ class TestRpcError:
         app = Wilrise()
 
         @app.method
-        def fail() -> None:
+        def fail() -> None:  # pyright: ignore[reportUnusedFunction]
             raise RpcError(-32001, "fail")
 
         client = _client(app)
@@ -111,7 +110,7 @@ class TestRpcError:
         app = Wilrise()
 
         @app.method
-        def fail() -> None:
+        def fail() -> None:  # pyright: ignore[reportUnusedFunction]
             raise RpcError(-32001, "fail")
 
         client = _client(app)
@@ -133,7 +132,7 @@ class TestUseProviderExceptions:
             raise ConnectionError("DB is down")
 
         @app.method
-        def get_data(db: str = Use(bad_provider)) -> str:
+        def get_data(db: str = Use(bad_provider)) -> str:  # pyright: ignore[reportUnusedFunction]
             return db
 
         client = _client(app)
@@ -148,7 +147,7 @@ class TestUseProviderExceptions:
             raise RpcError(-32001, "Unauthorized")
 
         @app.method
-        def secret(token: str = Use(auth_provider)) -> str:
+        def secret(token: str = Use(auth_provider)) -> str:  # pyright: ignore[reportUnusedFunction]
             return token
 
         client = _client(app)
@@ -169,9 +168,7 @@ class TestExceptionMapper:
             pass
 
         class MyMapper:
-            def map_exception(
-                self, exc: Exception, context: RpcContext
-            ) -> tuple[int, str, object] | None:
+            def map_exception(self, exc: Exception, context: RpcContext) -> tuple[int, str, object] | None:
                 if isinstance(exc, DbError):
                     return -32010, "Database error", {"detail": str(exc)}
                 return None
@@ -180,7 +177,7 @@ class TestExceptionMapper:
         app.set_exception_mapper(MyMapper())
 
         @app.method
-        def fetch() -> None:
+        def fetch() -> None:  # pyright: ignore[reportUnusedFunction]
             raise DbError("connection timeout")
 
         client = _client(app)
@@ -194,16 +191,14 @@ class TestExceptionMapper:
         """When mapper returns None for an exception → default -32603."""
 
         class MyMapper:
-            def map_exception(
-                self, exc: Exception, context: RpcContext
-            ) -> tuple[int, str, object] | None:
+            def map_exception(self, exc: Exception, context: RpcContext) -> tuple[int, str, object] | None:
                 return None  # always fall back
 
         app = Wilrise()
         app.set_exception_mapper(MyMapper())
 
         @app.method
-        def boom() -> None:
+        def boom() -> None:  # pyright: ignore[reportUnusedFunction]
             raise ValueError("unexpected")
 
         client = _client(app)
@@ -216,9 +211,7 @@ class TestExceptionMapper:
         received: list[RpcContext] = []
 
         class CtxMapper:
-            def map_exception(
-                self, exc: Exception, context: RpcContext
-            ) -> tuple[int, str, object] | None:
+            def map_exception(self, exc: Exception, context: RpcContext) -> tuple[int, str, object] | None:
                 received.append(context)
                 return None
 
@@ -226,7 +219,7 @@ class TestExceptionMapper:
         app.set_exception_mapper(CtxMapper())
 
         @app.method
-        def fail() -> None:
+        def fail() -> None:  # pyright: ignore[reportUnusedFunction]
             raise RuntimeError("oops")
 
         client = _client(app)
@@ -238,9 +231,7 @@ class TestExceptionMapper:
         """set_exception_mapper(None) restores the default -32603 behavior."""
 
         class MyMapper:
-            def map_exception(
-                self, exc: Exception, context: RpcContext
-            ) -> tuple[int, str, object] | None:
+            def map_exception(self, exc: Exception, context: RpcContext) -> tuple[int, str, object] | None:
                 return -32010, "mapped", None
 
         app = Wilrise()
@@ -248,7 +239,7 @@ class TestExceptionMapper:
         app.set_exception_mapper(None)  # reset
 
         @app.method
-        def fail() -> None:
+        def fail() -> None:  # pyright: ignore[reportUnusedFunction]
             raise RuntimeError("oops")
 
         client = _client(app)

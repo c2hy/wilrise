@@ -1,5 +1,4 @@
 """Validate core JSON-RPC flow (@app.method ≈ route, Use ≈ Depends)."""
-# pyright: reportUnusedFunction=false
 
 from typing import Any
 
@@ -16,7 +15,7 @@ def test_wilrise_json_rpc_method_and_dependency_injection() -> None:
         return "injected_db"
 
     @app.method
-    def add(a: int, b: int, db: str = Use(get_db)) -> dict[str, Any]:
+    def add(a: int, b: int, db: str = Use(get_db)) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
         return {"sum": a + b, "db": db}
 
     client = TestClient(app.as_asgi())

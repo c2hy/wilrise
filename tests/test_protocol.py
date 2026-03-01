@@ -158,21 +158,21 @@ class TestParseSingleRequest:
     def test_id_string(self) -> None:
         """id can be a string."""
         body = {"jsonrpc": "2.0", "method": "add", "id": "abc123"}
-        parsed, invalid_data = parse_single_request(body)
+        parsed, _ = parse_single_request(body)
         assert parsed is not None
         assert parsed.id == "abc123"
 
     def test_id_float(self) -> None:
         """id can be a float."""
         body = {"jsonrpc": "2.0", "method": "add", "id": 1.5}
-        parsed, invalid_data = parse_single_request(body)
+        parsed, _ = parse_single_request(body)
         assert parsed is not None
         assert parsed.id == 1.5
 
     def test_id_null(self) -> None:
         """id: null is valid and not a notification."""
         body = {"jsonrpc": "2.0", "method": "add", "id": None}
-        parsed, invalid_data = parse_single_request(body)
+        parsed, _ = parse_single_request(body)
         assert parsed is not None
         assert parsed.id is None
         assert parsed.is_notification is False
@@ -180,14 +180,14 @@ class TestParseSingleRequest:
     def test_empty_params_dict(self) -> None:
         """Empty params dict is valid."""
         body = {"jsonrpc": "2.0", "method": "add", "params": {}, "id": 1}
-        parsed, invalid_data = parse_single_request(body)
+        parsed, _ = parse_single_request(body)
         assert parsed is not None
         assert parsed.params == {}
 
     def test_empty_params_list(self) -> None:
         """Empty params list is valid."""
         body = {"jsonrpc": "2.0", "method": "add", "params": [], "id": 1}
-        parsed, invalid_data = parse_single_request(body)
+        parsed, _ = parse_single_request(body)
         assert parsed is not None
         assert parsed.params == []
 
@@ -199,7 +199,7 @@ class TestParseSingleRequest:
             "params": {"user": {"name": "Alice", "age": 30}},
             "id": 1,
         }
-        parsed, invalid_data = parse_single_request(body)
+        parsed, _ = parse_single_request(body)
         assert parsed is not None
         assert parsed.params == {"user": {"name": "Alice", "age": 30}}
 
@@ -211,14 +211,14 @@ class TestParseSingleRequest:
             "params": [[1, 2], [3, 4]],
             "id": 1,
         }
-        parsed, invalid_data = parse_single_request(body)
+        parsed, _ = parse_single_request(body)
         assert parsed is not None
         assert parsed.params == [[1, 2], [3, 4]]
 
     def test_method_with_dots(self) -> None:
         """Method names can contain dots (except rpc. prefix)."""
         body = {"jsonrpc": "2.0", "method": "user.getById", "id": 1}
-        parsed, invalid_data = parse_single_request(body)
+        parsed, _ = parse_single_request(body)
         assert parsed is not None
         assert parsed.method == "user.getById"
 
@@ -237,9 +237,7 @@ class TestBuildError:
 
     def test_build_error_with_data(self) -> None:
         """Build error with data field."""
-        result = build_error(
-            -32602, "Invalid params", 1, data={"validation_errors": []}
-        )
+        result = build_error(-32602, "Invalid params", 1, data={"validation_errors": []})
         assert result == {
             "jsonrpc": "2.0",
             "error": {
@@ -382,9 +380,7 @@ class TestJsonRpcRequest:
 
     def test_json_rpc_request_notification(self) -> None:
         """JsonRpcRequest for notification."""
-        req = JsonRpcRequest(
-            method="log", params={"msg": "hello"}, id=None, is_notification=True
-        )
+        req = JsonRpcRequest(method="log", params={"msg": "hello"}, id=None, is_notification=True)
         assert req.method == "log"
         assert req.params == {"msg": "hello"}
         assert req.id is None
@@ -405,20 +401,12 @@ class TestJsonRpcRequest:
 
     def test_json_rpc_request_equality(self) -> None:
         """JsonRpcRequest equality."""
-        req1 = JsonRpcRequest(
-            method="add", params={"a": 1}, id=1, is_notification=False
-        )
-        req2 = JsonRpcRequest(
-            method="add", params={"a": 1}, id=1, is_notification=False
-        )
+        req1 = JsonRpcRequest(method="add", params={"a": 1}, id=1, is_notification=False)
+        req2 = JsonRpcRequest(method="add", params={"a": 1}, id=1, is_notification=False)
         assert req1 == req2
 
     def test_json_rpc_request_inequality(self) -> None:
         """JsonRpcRequest inequality."""
-        req1 = JsonRpcRequest(
-            method="add", params={"a": 1}, id=1, is_notification=False
-        )
-        req2 = JsonRpcRequest(
-            method="sub", params={"a": 1}, id=1, is_notification=False
-        )
+        req1 = JsonRpcRequest(method="add", params={"a": 1}, id=1, is_notification=False)
+        req2 = JsonRpcRequest(method="sub", params={"a": 1}, id=1, is_notification=False)
         assert req1 != req2

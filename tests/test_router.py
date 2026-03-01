@@ -6,7 +6,6 @@ FastAPI mapping:
   router.prefix = "/items"       → include_router(router, prefix="items.")
   duplicate route registration   → ValueError on include_router
 """
-# pyright: reportUnusedFunction=false
 
 from typing import Any
 
@@ -46,7 +45,7 @@ class TestBasicRouter:
         router = Router()
 
         @router.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         app = Wilrise()
@@ -61,7 +60,7 @@ class TestBasicRouter:
         router = Router()
 
         @router.method("math.multiply")
-        def multiply(x: int, y: int) -> int:
+        def multiply(x: int, y: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return x * y
 
         app = Wilrise()
@@ -76,23 +75,19 @@ class TestBasicRouter:
         router = Router()
 
         @router.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         @router.method
-        def sub(a: int, b: int) -> int:
+        def sub(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a - b
 
         app = Wilrise()
         app.include_router(router)
         client = _client(app)
 
-        assert (
-            client.post("/", json=_rpc("add", {"a": 5, "b": 3})).json()["result"] == 8
-        )
-        assert (
-            client.post("/", json=_rpc("sub", {"a": 5, "b": 3})).json()["result"] == 2
-        )
+        assert client.post("/", json=_rpc("add", {"a": 5, "b": 3})).json()["result"] == 8
+        assert client.post("/", json=_rpc("sub", {"a": 5, "b": 3})).json()["result"] == 2
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +101,7 @@ class TestRouterPrefix:
         router = Router()
 
         @router.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         app = Wilrise()
@@ -122,7 +117,7 @@ class TestRouterPrefix:
         router = Router()
 
         @router.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         app = Wilrise()
@@ -138,11 +133,11 @@ class TestRouterPrefix:
         items = Router()
 
         @users.method("get")
-        def get_user(user_id: int) -> dict[str, Any]:
+        def get_user(user_id: int) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             return {"user": user_id}
 
         @items.method("get")
-        def get_item(item_id: int) -> dict[str, Any]:
+        def get_item(item_id: int) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             return {"item": item_id}
 
         app = Wilrise()
@@ -150,12 +145,8 @@ class TestRouterPrefix:
         app.include_router(items, prefix="items.")
 
         client = _client(app)
-        assert client.post("/", json=_rpc("users.get", {"user_id": 1})).json()[
-            "result"
-        ] == {"user": 1}
-        assert client.post("/", json=_rpc("items.get", {"item_id": 2})).json()[
-            "result"
-        ] == {"item": 2}
+        assert client.post("/", json=_rpc("users.get", {"user_id": 1})).json()["result"] == {"user": 1}
+        assert client.post("/", json=_rpc("items.get", {"item_id": 2})).json()["result"] == {"item": 2}
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +160,7 @@ class TestRouterDuplicateDetection:
         router = Router()
 
         @router.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         app = Wilrise()
@@ -184,7 +175,7 @@ class TestRouterDuplicateDetection:
         router = Router()
 
         @router.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         app = Wilrise()
@@ -207,7 +198,7 @@ class TestRouterWithDI:
             return "db_conn"
 
         @router.method
-        def query(table: str, db: str = Use(get_db)) -> str:
+        def query(table: str, db: str = Use(get_db)) -> str:  # pyright: ignore[reportUnusedFunction]
             return f"{db}:{table}"
 
         app = Wilrise()
@@ -225,7 +216,7 @@ class TestRouterWithDI:
             return "svc"
 
         @router.method
-        def status(svc: str = Use(get_service)) -> str:
+        def status(svc: str = Use(get_service)) -> str:  # pyright: ignore[reportUnusedFunction]
             return svc
 
         app = Wilrise()

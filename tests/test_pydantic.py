@@ -6,7 +6,6 @@ FastAPI mapping:
   response_model=MyModel           → return a BaseModel; auto dump json
   Multiple body / mixed params     → first param BaseModel + extra params
 """
-# pyright: reportUnusedFunction=false
 
 from typing import Any
 
@@ -51,7 +50,7 @@ class TestWholeParamsStyle:
         app = Wilrise()
 
         @app.method
-        def add(params: AddParams) -> int:
+        def add(params: AddParams) -> int:  # pyright: ignore[reportUnusedFunction]
             return params.a + params.b
 
         client = _client(app)
@@ -63,7 +62,7 @@ class TestWholeParamsStyle:
         app = Wilrise()
 
         @app.method
-        def add(params: AddParams) -> int:
+        def add(params: AddParams) -> int:  # pyright: ignore[reportUnusedFunction]
             return params.a + params.b
 
         client = _client(app)
@@ -77,7 +76,7 @@ class TestWholeParamsStyle:
         app = Wilrise()
 
         @app.method
-        def add(params: AddParams) -> int:
+        def add(params: AddParams) -> int:  # pyright: ignore[reportUnusedFunction]
             return params.a + params.b
 
         client = _client(app)
@@ -96,7 +95,7 @@ class TestKeyedStyle:
         app = Wilrise()
 
         @app.method
-        def add(params: AddParams) -> int:
+        def add(params: AddParams) -> int:  # pyright: ignore[reportUnusedFunction]
             return params.a + params.b
 
         client = _client(app)
@@ -124,7 +123,7 @@ class TestMultiParamWithModel:
             return "acme"
 
         @app.method
-        def list_users(
+        def list_users(  # pyright: ignore[reportUnusedFunction]
             filters: UserFilter, tenant: str = Use(get_tenant)
         ) -> dict[str, Any]:
             return {
@@ -145,7 +144,7 @@ class TestMultiParamWithModel:
         app = Wilrise()
 
         @app.method
-        def process(filters: UserFilter) -> str:
+        def process(filters: UserFilter) -> str:  # pyright: ignore[reportUnusedFunction]
             return f"{filters.role}:{filters.active}"
 
         client = _client(app)
@@ -173,7 +172,7 @@ class TestModelReturnValue:
         app = Wilrise()
 
         @app.method
-        def get_item() -> ItemResponse:
+        def get_item() -> ItemResponse:  # pyright: ignore[reportUnusedFunction]
             return ItemResponse(name="widget", price=9.99)
 
         client = _client(app)
@@ -192,7 +191,7 @@ class TestModelReturnValue:
         app = Wilrise()
 
         @app.method
-        def nested() -> Outer:
+        def nested() -> Outer:  # pyright: ignore[reportUnusedFunction]
             return Outer(inner=Inner(value=42))
 
         client = _client(app)
@@ -220,7 +219,7 @@ class TestNestedModelValidation:
         app = Wilrise()
 
         @app.method
-        def create_person(person: Person) -> dict[str, Any]:
+        def create_person(person: Person) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             return {"name": person.name, "city": person.address.city}
 
         client = _client(app)
@@ -242,7 +241,7 @@ class TestNestedModelValidation:
         app = Wilrise()
 
         @app.method
-        def create_person(person: Person) -> dict[str, Any]:
+        def create_person(person: Person) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             return {}
 
         client = _client(app)

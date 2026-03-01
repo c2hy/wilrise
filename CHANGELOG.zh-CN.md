@@ -8,6 +8,16 @@
 
 （暂无）
 
+## [0.3.1] - 2025-03-01
+
+### 修复
+
+- **Use / RequestProvider 类型**：`RequestProvider` 放宽为 `Callable[..., ...]`，无参 provider（如 `def get_db() -> Generator[Session]`）不再被类型检查器报错；0 参时框架调用 `provider()`，否则传入 `request`。
+
+### 变更
+
+- **测试**：移除全局 `reportUnusedFunction=false`，仅在 RPC 方法 def 上使用行内 `# pyright: ignore[reportUnusedFunction]`；0 参用例并入 `test_params.TestZeroArgProvider`。
+
 ## [0.2.0] - 2025-02-23
 
 ### 新增
@@ -49,8 +59,9 @@
 - 可选 `from_env()`：从 `WILRISE_*` 环境变量构建 `Wilrise` 的 kwargs。
 - 文档：生产就绪相关（errors、configuration、observability、versioning、runbook、architecture）。
 
-[未发布]: https://github.com/your-username/wilrise/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/your-username/wilrise/releases/tag/v0.2.0
+[未发布]: https://github.com/c2hy/wilrise/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/c2hy/wilrise/compare/v0.3.0...v0.3.1
+[0.2.0]: https://github.com/c2hy/wilrise/releases/tag/v0.2.0
 [0.1.2]: https://github.com/your-username/wilrise/releases/tag/v0.1.2
 [0.1.1]: https://github.com/your-username/wilrise/releases/tag/v0.1.1
 [0.1.0]: https://github.com/your-username/wilrise/releases/tag/v0.1.0

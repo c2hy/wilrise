@@ -38,15 +38,11 @@ def parse_single_request(
     params_raw = body.get("params")
     if params_raw is not None and not isinstance(params_raw, (list, dict)):
         return None, None
-    params: dict[str, Any] | list[Any] | None = cast(
-        dict[str, Any] | list[Any] | None, params_raw
-    )
+    params: dict[str, Any] | list[Any] | None = cast(dict[str, Any] | list[Any] | None, params_raw)
     is_notification = "id" not in body
     req_id = body.get("id") if not is_notification else None
     return (
-        JsonRpcRequest(
-            method=method, params=params, id=req_id, is_notification=is_notification
-        ),
+        JsonRpcRequest(method=method, params=params, id=req_id, is_notification=is_notification),
         None,
     )
 

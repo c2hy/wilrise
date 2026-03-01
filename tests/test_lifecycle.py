@@ -8,7 +8,6 @@ FastAPI mapping:
   request.state              → request.state.rpc_context / RpcContext
   X-Request-ID header        → RpcContext.http_request_id
 """
-# pyright: reportUnusedFunction=false
 
 from typing import Any
 
@@ -53,7 +52,7 @@ class TestStartupShutdown:
         app.add_startup(on_start)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         with TestClient(app.as_asgi()) as client:
@@ -71,7 +70,7 @@ class TestStartupShutdown:
         app.add_startup(on_start)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         with TestClient(app.as_asgi()) as client:
@@ -89,7 +88,7 @@ class TestStartupShutdown:
         app.add_shutdown(on_stop)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         with TestClient(app.as_asgi()) as client:
@@ -105,7 +104,7 @@ class TestStartupShutdown:
         app.add_shutdown(lambda: order.append(2))
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         with TestClient(app.as_asgi()) as client:
@@ -135,7 +134,7 @@ class TestMiddleware:
         app.add_middleware(TraceMiddleware)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         client = _client(app)
@@ -155,7 +154,7 @@ class TestMiddleware:
         app.add_middleware(HeaderMiddleware)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         client = _client(app)
@@ -175,7 +174,7 @@ class TestBeforeCallHook:
         app.add_before_call_hook(lambda name, params, req: None)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         client = _client(app)
@@ -194,7 +193,7 @@ class TestBeforeCallHook:
         app.add_before_call_hook(lambda name, params, req: error_resp)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         client = _client(app)
@@ -212,7 +211,7 @@ class TestBeforeCallHook:
         app.add_before_call_hook(async_hook)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         client = _client(app)
@@ -231,7 +230,7 @@ class TestBeforeCallHook:
         app.add_before_call_hook(capturing_hook)
 
         @app.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         client = _client(app)
@@ -257,7 +256,7 @@ class TestAfterCallHook:
         app.add_after_call_hook(after)
 
         @app.method
-        def add(a: int, b: int) -> int:
+        def add(a: int, b: int) -> int:  # pyright: ignore[reportUnusedFunction]
             return a + b
 
         client = _client(app)
@@ -275,7 +274,7 @@ class TestAfterCallHook:
         app.add_after_call_hook(async_after)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         client = _client(app)
@@ -291,7 +290,7 @@ class TestAfterCallHook:
         app.add_after_call_hook(lambda name, result, req: seen.append(name))
 
         @app.method
-        def fail() -> None:
+        def fail() -> None:  # pyright: ignore[reportUnusedFunction]
             raise RpcError(-32001, "err")
 
         client = _client(app)
@@ -310,7 +309,7 @@ class TestRpcContext:
         app = Wilrise()
 
         @app.method
-        def ctx_method(ctx: RpcContext = Use(get_rpc_context)) -> dict[str, Any]:
+        def ctx_method(ctx: RpcContext = Use(get_rpc_context)) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
             return {
                 "method": ctx.method,
                 "request_id": ctx.request_id,
@@ -329,7 +328,7 @@ class TestRpcContext:
         app = Wilrise()
 
         @app.method
-        def get_req_id(ctx: RpcContext = Use(get_rpc_context)) -> str:
+        def get_req_id(ctx: RpcContext = Use(get_rpc_context)) -> str:  # pyright: ignore[reportUnusedFunction]
             return ctx.http_request_id
 
         client = _client(app)
@@ -345,7 +344,7 @@ class TestRpcContext:
         app = Wilrise()
 
         @app.method
-        def get_req_id(ctx: RpcContext = Use(get_rpc_context)) -> str:
+        def get_req_id(ctx: RpcContext = Use(get_rpc_context)) -> str:  # pyright: ignore[reportUnusedFunction]
             return ctx.http_request_id
 
         client = _client(app)
@@ -376,7 +375,7 @@ class TestRequestLogger:
         app.add_request_logger(my_logger)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         client = _client(app)
@@ -395,7 +394,7 @@ class TestRequestLogger:
         app.add_request_logger(async_logger)
 
         @app.method
-        def ping() -> str:
+        def ping() -> str:  # pyright: ignore[reportUnusedFunction]
             return "pong"
 
         client = _client(app)
@@ -422,7 +421,7 @@ class TestGeneratorDependency:
         app = Wilrise()
 
         @app.method
-        def use_db(db: str = Use(db_session)) -> str:
+        def use_db(db: str = Use(db_session)) -> str:  # pyright: ignore[reportUnusedFunction]
             return db
 
         client = _client(app)
@@ -443,7 +442,7 @@ class TestGeneratorDependency:
         app = Wilrise()
 
         @app.method
-        async def use_db(db: str = Use(async_db)) -> str:
+        async def use_db(db: str = Use(async_db)) -> str:  # pyright: ignore[reportUnusedFunction]
             return db
 
         client = _client(app)
