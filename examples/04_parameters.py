@@ -52,9 +52,6 @@ if __name__ == "__main__":
     print("Running advanced parameters example at http://127.0.0.1:8000")
     print("Example request (calling getUser):")
     print('  curl -X POST http://127.0.0.1:8000 -H "Content-Type: application/json" \\')
-    print(
-        '    -d \'{"jsonrpc":"2.0", "method":"getUser", '
-        '"params":{"user_id":1}, "id":1}\''
-    )
+    print('    -d \'{"jsonrpc":"2.0", "method":"getUser", "params":{"user_id":1}, "id":1}\'')
 
     app.run(host="127.0.0.1", port=8000)

@@ -75,9 +75,7 @@ class UserListParams(BaseModel):
     limit: int = Field(50, ge=1, le=100)
     status: UserStatus | None = Field(None, description="Filter by status")
     role: UserRole | None = Field(None, description="Filter by role")
-    search: str | None = Field(
-        None, max_length=64, description="Search in username/display_name"
-    )
+    search: str | None = Field(None, max_length=64, description="Search in username/display_name")
 
 
 class UserGetParams(BaseModel):

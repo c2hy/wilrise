@@ -56,18 +56,12 @@ def decode_access_token(token: str) -> dict[str, Any]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("type") != "access":
-            raise RpcError(
-                -32001, "Invalid token type", data={"code": "invalid_token_type"}
-            )
+            raise RpcError(-32001, "Invalid token type", data={"code": "invalid_token_type"})
         return payload
     except jwt.ExpiredSignatureError:
-        raise RpcError(
-            -32001, "Token expired", data={"code": "token_expired"}
-        ) from None
+        raise RpcError(-32001, "Token expired", data={"code": "token_expired"}) from None
     except jwt.InvalidTokenError:
-        raise RpcError(
-            -32001, "Invalid token", data={"code": "invalid_token"}
-        ) from None
+        raise RpcError(-32001, "Invalid token", data={"code": "invalid_token"}) from None
 
 
 def get_current_user(request: Request) -> dict[str, Any]:
@@ -91,9 +85,7 @@ def get_current_user(request: Request) -> dict[str, Any]:
         if not user:
             raise RpcError(-32001, "User not found", data={"code": "user_not_found"})
         if user.status != UserStatus.ACTIVE:
-            raise RpcError(
-                -32001, "User account is not active", data={"code": "account_inactive"}
-            )
+            raise RpcError(-32001, "User account is not active", data={"code": "account_inactive"})
         return user.to_dict()
     finally:
         gen.close()
@@ -103,9 +95,7 @@ def get_current_active_user(request: Request) -> dict[str, Any]:
     """Get current user and verify account is active."""
     user = get_current_user(request)
     if user.get("status") != UserStatus.ACTIVE.value:
-        raise RpcError(
-            -32001, "User account is not active", data={"code": "account_inactive"}
-        )
+        raise RpcError(-32001, "User account is not active", data={"code": "account_inactive"})
     return user
 
 

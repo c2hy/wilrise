@@ -26,9 +26,7 @@ if __name__ == "__main__":
     print("Running minimal example at http://127.0.0.1:8000")
     print("Example request:")
     print('  curl -X POST http://127.0.0.1:8000 -H "Content-Type: application/json" \\')
-    print(
-        '    -d \'{"jsonrpc":"2.0", "method":"add", "params":{"a":1, "b":2}, "id":1}\''
-    )
+    print('    -d \'{"jsonrpc":"2.0", "method":"add", "params":{"a":1, "b":2}, "id":1}\'')
     print("\nExpected response:")
     print('  {"jsonrpc":"2.0", "result":3, "id":1}\n')
 

@@ -50,9 +50,7 @@ app = Wilrise()
 
 
 @app.method
-async def get_user(
-    user_id: int, db: DBSession = Use(get_db_session)
-) -> dict[str, Any] | None:
+async def get_user(user_id: int, db: DBSession = Use(get_db_session)) -> dict[str, Any] | None:
     """Get a user by ID.
 
     The client only sends `user_id`. The frameowrk injects the `db` parameter
@@ -65,9 +63,6 @@ if __name__ == "__main__":
     print("Running dependencies example at http://127.0.0.1:8000")
     print("Example request (getting user 1):")
     print('  curl -X POST http://127.0.0.1:8000 -H "Content-Type: application/json" \\')
-    print(
-        '    -d \'{"jsonrpc":"2.0", "method":"get_user", '
-        '"params":{"user_id":1}, "id":1}\''
-    )
+    print('    -d \'{"jsonrpc":"2.0", "method":"get_user", "params":{"user_id":1}, "id":1}\'')
 
     app.run(host="127.0.0.1", port=8000)

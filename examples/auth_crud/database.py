@@ -91,9 +91,7 @@ def list_users(
     return users, total
 
 
-def create_refresh_token(
-    session: Session, user_id: int, token: str, expires_days: int = 7
-) -> RefreshToken:
+def create_refresh_token(session: Session, user_id: int, token: str, expires_days: int = 7) -> RefreshToken:
     """Create a new refresh token for a user."""
 
     expires_at = datetime.now(UTC) + timedelta(days=expires_days)

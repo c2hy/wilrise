@@ -89,9 +89,7 @@ def test_login_returns_tokens() -> None:
     create_user("logintest")
     result = login("logintest")
     assert isinstance(result["access_token"], str) and len(result["access_token"]) > 10
-    assert (
-        isinstance(result["refresh_token"], str) and len(result["refresh_token"]) > 10
-    )
+    assert isinstance(result["refresh_token"], str) and len(result["refresh_token"]) > 10
 
 
 def test_refresh_token_flow() -> None:
@@ -156,9 +154,7 @@ def test_user_list_with_filters() -> None:
 
     r = client.post(
         "/",
-        json=rpc(
-            "user.list", {"params": {"skip": 0, "limit": 100, "status": "active"}}
-        ),
+        json=rpc("user.list", {"params": {"skip": 0, "limit": 100, "status": "active"}}),
     )
     assert r.status_code == 200
     result = r.json()["result"]
@@ -253,9 +249,7 @@ def test_user_full_crud_flow() -> None:
     token = result["access_token"]
     auth = {"Authorization": f"Bearer {token}"}
 
-    r = client.post(
-        "/", json=rpc("user.get", {"params": {"user_id": user["id"]}}), headers=auth
-    )
+    r = client.post("/", json=rpc("user.get", {"params": {"user_id": user["id"]}}), headers=auth)
     assert r.json()["result"]["display_name"] == "Original"
 
     r = client.post(
@@ -268,14 +262,10 @@ def test_user_full_crud_flow() -> None:
     )
     assert r.json()["result"]["display_name"] == "Updated"
 
-    r = client.post(
-        "/", json=rpc("user.get", {"params": {"user_id": user["id"]}}), headers=auth
-    )
+    r = client.post("/", json=rpc("user.get", {"params": {"user_id": user["id"]}}), headers=auth)
     assert r.json()["result"]["display_name"] == "Updated"
 
-    r = client.post(
-        "/", json=rpc("user.delete", {"params": {"user_id": user["id"]}}), headers=auth
-    )
+    r = client.post("/", json=rpc("user.delete", {"params": {"user_id": user["id"]}}), headers=auth)
     assert r.json()["result"] is True
 
     r = client.post("/", json=rpc("user.list", {"params": {"skip": 0, "limit": 100}}))

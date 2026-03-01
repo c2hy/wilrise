@@ -22,9 +22,7 @@ BASE = "http://test"
 CONCURRENCY = 20  # number of parallel users/requests
 
 
-def rpc_request(
-    method: str, params: dict[str, Any] | None = None, token: str | None = None
-) -> dict[str, Any]:
+def rpc_request(method: str, params: dict[str, Any] | None = None, token: str | None = None) -> dict[str, Any]:
     """Build JSON-RPC request body."""
     body: dict[str, Any] = {"jsonrpc": "2.0", "method": method, "id": 1}
     if params is not None:
@@ -84,9 +82,7 @@ async def user_list(client: httpx.AsyncClient) -> list[Any]:
     return result.get("users", []) if isinstance(result, dict) else result
 
 
-async def user_get(
-    client: httpx.AsyncClient, user_id: int, token: str
-) -> dict[str, Any] | None:
+async def user_get(client: httpx.AsyncClient, user_id: int, token: str) -> dict[str, Any] | None:
     """Get user by id (with auth)."""
     body = rpc_request("user.get", {"user_id": user_id})
     data = await post(client, body, token=token)
@@ -164,10 +160,7 @@ async def run_concurrent_gets(
     tokens: list[str],
 ) -> list[dict[str, Any]]:
     """Get each user by id in parallel (own token); assert no cross-request data."""
-    tasks = [
-        user_get(client, uid, token)
-        for uid, token in zip(user_ids, tokens, strict=True)
-    ]
+    tasks = [user_get(client, uid, token) for uid, token in zip(user_ids, tokens, strict=True)]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     out: list[dict[str, Any]] = []
     for i, r in enumerate(results):
@@ -186,10 +179,7 @@ async def run_concurrent_updates(
     tokens: list[str],
 ) -> None:
     """Update each user's display_name in parallel."""
-    tasks = [
-        user_update(client, uid, f"Updated {uid}", token)
-        for uid, token in zip(user_ids, tokens, strict=True)
-    ]
+    tasks = [user_update(client, uid, f"Updated {uid}", token) for uid, token in zip(user_ids, tokens, strict=True)]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     for i, r in enumerate(results):
         if isinstance(r, Exception):
@@ -202,10 +192,7 @@ async def run_concurrent_deletes(
     tokens: list[str],
 ) -> None:
     """Delete each user in parallel."""
-    tasks = [
-        user_delete(client, uid, token)
-        for uid, token in zip(user_ids, tokens, strict=True)
-    ]
+    tasks = [user_delete(client, uid, token) for uid, token in zip(user_ids, tokens, strict=True)]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     for i, r in enumerate(results):
         if isinstance(r, Exception):
@@ -215,9 +202,7 @@ async def run_concurrent_deletes(
 
 async def main() -> None:
     transport = httpx.ASGITransport(app=ASGI_APP)
-    async with httpx.AsyncClient(
-        transport=transport, base_url=BASE, timeout=30.0
-    ) as client:
+    async with httpx.AsyncClient(transport=transport, base_url=BASE, timeout=30.0) as client:
         print("1. Concurrent create: create", CONCURRENCY, "users in parallel")
         created: list[dict[str, Any]] = await run_concurrent_creates(client)
         user_ids: list[int] = [u["id"] for u in created]
@@ -242,9 +227,7 @@ async def main() -> None:
         print("6. Concurrent get again: verify updates")
         got2 = await run_concurrent_gets(client, user_ids, tokens)
         for i, u in enumerate(got2):
-            assert u["display_name"] == f"Updated {user_ids[i]}", (
-                f"update not visible at {i}"
-            )
+            assert u["display_name"] == f"Updated {user_ids[i]}", f"update not visible at {i}"
 
         print("7. Concurrent delete: delete all users in parallel")
         await run_concurrent_deletes(client, user_ids, tokens)

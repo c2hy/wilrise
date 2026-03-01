@@ -85,13 +85,9 @@ def login(
     """Login with username and password; returns JWT access_token and refresh_token."""
     user = get_user_by_username(db, params.username)
     if not user or not verify_password(params.password, user.password_hash):
-        raise RpcError(
-            -32001, "Invalid username or password", data={"code": "auth_failed"}
-        )
+        raise RpcError(-32001, "Invalid username or password", data={"code": "auth_failed"})
     if user.status != UserStatus.ACTIVE:
-        raise RpcError(
-            -32001, "Account is not active", data={"code": "account_inactive"}
-        )
+        raise RpcError(-32001, "Account is not active", data={"code": "account_inactive"})
     access_token = create_access_token(user.username)
     refresh_token = create_refresh_token()
     db_create_refresh_token(db, user.id, refresh_token)
@@ -117,18 +113,14 @@ def refresh_token(
     """Refresh access token using a valid refresh token."""
     rt = get_refresh_token(db, params.refresh_token)
     if not rt or rt.revoked:
-        raise RpcError(
-            -32001, "Invalid or revoked refresh token", data={"code": "invalid_token"}
-        )
+        raise RpcError(-32001, "Invalid or revoked refresh token", data={"code": "invalid_token"})
     from datetime import UTC, datetime
 
     if rt.expires_at.replace(tzinfo=None) < datetime.now(UTC).replace(tzinfo=None):
         raise RpcError(-32001, "Refresh token expired", data={"code": "token_expired"})
     user = get_user_by_id(db, rt.user_id)
     if not user or user.status != UserStatus.ACTIVE:
-        raise RpcError(
-            -32001, "User not found or inactive", data={"code": "user_inactive"}
-        )
+        raise RpcError(-32001, "User not found or inactive", data={"code": "user_inactive"})
     access_token = create_access_token(user.username)
     new_refresh_token = create_refresh_token()
     rt.revoked = True
@@ -174,9 +166,7 @@ def user_create(
 ) -> dict[str, Any]:
     """Create a new user (public for demo; in production protect or use admin)."""
     if get_user_by_username(db, params.username):
-        raise RpcError(
-            -32002, "Username already exists", data={"username": params.username}
-        )
+        raise RpcError(-32002, "Username already exists", data={"username": params.username})
     if params.email and get_user_by_username(db, params.email):
         raise RpcError(-32002, "Email already exists", data={"email": params.email})
     user = User(
@@ -299,9 +289,7 @@ def user_change_password(
     """Change own password."""
     user = get_user_by_id(db, current_user["id"])
     if not user or not verify_password(params.current_password, user.password_hash):
-        raise RpcError(
-            -32001, "Current password is incorrect", data={"code": "invalid_password"}
-        )
+        raise RpcError(-32001, "Current password is incorrect", data={"code": "invalid_password"})
     user.password_hash = hash_password(params.new_password)
     db.commit()
     revoke_all_user_tokens(db, user.id)
